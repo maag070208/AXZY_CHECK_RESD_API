@@ -1,0 +1,79 @@
+import { prismaClient } from "@src/core/config/database";
+import { ITDataTableFetchParams, ITDataTableResponse } from "@src/core/dto/datatable.dto";
+import { getPrismaPaginationParams } from "@src/core/utils/prisma-pagination.utils";
+
+import { IScheduleResponse } from "./schedule.response";
+
+export const getDataTableSchedules = async (params: ITDataTableFetchParams): Promise<ITDataTableResponse<IScheduleResponse>> => {
+    const prismaParams = getPrismaPaginationParams(params || { page: 1, limit: 10, filters: {} });
+
+    const [rows, total] = await Promise.all([
+        prismaClient.schedule.findMany({
+            ...prismaParams,
+            select: {
+                id: true,
+                name: true,
+                startTime: true,
+                endTime: true,
+                active: true,
+                createdAt: true,
+                _count: {
+                    select: { users: true }
+                }
+            }
+        }),
+        prismaClient.schedule.count({
+            where: prismaParams.where
+        })
+    ]);
+
+    return { rows: rows as IScheduleResponse[], total };
+};
+
+export const getSchedules = async () => {
+    return prismaClient.schedule.findMany({
+        where: { active: true },
+        orderBy: { name: 'asc' }
+    });
+};
+
+export const createSchedule = async (data: {
+    name: string;
+    startTime: string;
+    endTime: string;
+}) => {
+    return prismaClient.schedule.create({
+        data
+    });
+};
+
+export const updateSchedule = async (id: string, data: {
+    name?: string;
+    startTime?: string;
+    endTime?: string;
+    active?: boolean;
+}) => {
+    return prismaClient.schedule.update({
+        where: { id },
+        data
+    });
+};
+
+export const deleteSchedule = async (id: string) => {
+    return prismaClient.schedule.delete({
+        where: { id }
+    });
+};
+
+export const getUsersBySchedule = async (scheduleId: string) => {
+    return prismaClient.user.findMany({
+        where: { scheduleId, softDelete: false },
+        select: {
+            id: true,
+            name: true,
+            lastName: true,
+            username: true,
+            active: true
+        }
+    });
+};

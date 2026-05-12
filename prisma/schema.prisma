@@ -1,0 +1,387 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  value     String
+  users     User[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model Client {
+  id           String    @id @default(uuid())
+  name         String    @unique
+  address      String?
+  rfc          String?
+  contactName  String?
+  contactPhone String?
+  active       Boolean   @default(true)
+  softDelete   Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  locations    Location[]
+  rounds       Round[]
+  users        User[]
+  zones        Zone[]
+  incidents    Incident[]
+  maintenances Maintenance[]
+  recurringConfigurations RecurringConfiguration[]
+  assignmentLogs AssignmentLog[]
+}
+
+model Zone {
+  id         String    @id @default(uuid())
+  clientId   String
+  name       String
+  active     Boolean   @default(true)
+  softDelete Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  client     Client    @relation(fields: [clientId], references: [id])
+  locations  Location[]
+
+  @@unique([name, clientId])
+}
+
+model User {
+  id                       String                   @id @default(uuid())
+  name                     String
+  lastName                 String?
+  username                 String                   @unique
+  password                 String
+  active                   Boolean                  @default(true)
+  softDelete               Boolean                  @default(false)
+  shiftStart               String?
+  shiftEnd                 String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+  deletedAt                DateTime?
+  isLoggedIn               Boolean                  @default(false)
+  scheduleId               String?
+  clientId                 String?
+  roleId                   String
+  assignments              Assignment[]             @relation("GuardAssignments")
+  incidents                Incident[]
+  resolvedIncidents        Incident[]               @relation("IncidentResolver")
+  kardexEntries            Kardex[]
+  maintenances             Maintenance[]
+  resolvedMaintenances     Maintenance[]            @relation("MaintenanceResolver")
+  rounds                   Round[]                  @relation("GuardRounds")
+  client                   Client?                  @relation(fields: [clientId], references: [id])
+  role                     Role                     @relation(fields: [roleId], references: [id])
+  schedule                 Schedule?                @relation(fields: [scheduleId], references: [id])
+  recurringConfigurations  RecurringConfiguration[]
+  createdAssignments       Assignment[]             @relation("AssignedByAssignments")
+  assignmentLogs           AssignmentLog[]
+  auditLogs                AuditLog[]
+}
+
+model AssignmentLog {
+  id        String   @id @default(uuid())
+  guardId   String
+  clientId  String?
+  type      String   // ASIGNADO, REMOVIDO
+  notes     String?
+  createdAt DateTime @default(now())
+  
+  guard     User     @relation(fields: [guardId], references: [id])
+  client    Client?  @relation(fields: [clientId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  module     String
+  action     String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  resourceId String?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Schedule {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  startTime String
+  endTime   String
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  users     User[]
+}
+
+model Location {
+  id                 String              @id @default(uuid())
+  clientId           String?
+  zoneId             String?
+  aisle              String?
+  spot               String?
+  number             String?
+  name               String
+  reference          String?
+  isOccupied         Boolean             @default(false)
+  active             Boolean             @default(true)
+  softDelete         Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  client             Client?             @relation(fields: [clientId], references: [id])
+  zone               Zone?               @relation(fields: [zoneId], references: [id])
+  tasks              LocationTask[]
+  assignments        Assignment[]
+  kardexEntries      Kardex[]
+  recurringLocations RecurringLocation[]
+
+  @@unique([name, zoneId])
+}
+
+model LocationTask {
+  id          String    @id @default(uuid())
+  locationId  String
+  description String
+  reqPhoto    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  location    Location  @relation(fields: [locationId], references: [id])
+}
+
+model Kardex {
+  id           String      @id @default(uuid())
+  userId       String
+  locationId   String
+  timestamp    DateTime    @default(now())
+  notes        String?
+  media        Json?
+  latitude     Float?
+  longitude    Float?
+  assignmentId String?
+  scanType     ScanType    @default(FREE)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+  assignment   Assignment? @relation(fields: [assignmentId], references: [id])
+  location     Location    @relation(fields: [locationId], references: [id])
+  user         User        @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([locationId])
+  @@index([timestamp])
+}
+
+model Assignment {
+  id         String           @id @default(uuid())
+  guardId    String
+  locationId String
+  status     AssignmentStatus @default(PENDING)
+  assignedBy String
+  assignedByUser User?            @relation("AssignedByAssignments", fields: [assignedBy], references: [id])
+  notes      String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  deletedAt  DateTime?
+  guard      User             @relation("GuardAssignments", fields: [guardId], references: [id])
+  location   Location         @relation(fields: [locationId], references: [id])
+  tasks      AssignmentTask[]
+  kardex     Kardex[]
+
+  @@index([guardId])
+  @@index([locationId])
+}
+
+model AssignmentTask {
+  id           String     @id @default(uuid())
+  assignmentId String
+  description  String
+  reqPhoto     Boolean    @default(false)
+  completed    Boolean    @default(false)
+  completedAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+
+  @@index([assignmentId])
+}
+
+model IncidentCategory {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  value        String
+  type         String         @default("INCIDENT") // INCIDENT or MAINTENANCE
+  color        String?
+  icon         String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  deletedAt    DateTime?
+  types        IncidentType[]
+  incidents    Incident[]
+  maintenances Maintenance[]
+}
+
+model IncidentType {
+  id           String           @id @default(uuid())
+  categoryId   String
+  name         String           @unique
+  value        String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  deletedAt    DateTime?
+  category     IncidentCategory @relation(fields: [categoryId], references: [id])
+  incidents    Incident[]
+  maintenances Maintenance[]
+}
+
+model Incident {
+  id           String            @id @default(uuid())
+  guardId      String
+  title        String
+  categoryId   String?
+  typeId       String?
+  description  String?
+  media        Json?
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+  resolvedAt   DateTime?
+  resolvedById String?
+  status       IncidentStatus    @default(PENDING)
+  clientId     String?
+  client       Client?           @relation(fields: [clientId], references: [id])
+  category     IncidentCategory? @relation(fields: [categoryId], references: [id])
+  type         IncidentType?     @relation(fields: [typeId], references: [id])
+  guard        User              @relation(fields: [guardId], references: [id])
+  resolvedBy   User?             @relation("IncidentResolver", fields: [resolvedById], references: [id])
+}
+
+model Round {
+  id                       String                  @id @default(uuid())
+  guardId                  String
+  clientId                 String?
+  startTime                DateTime                @default(now())
+  endTime                  DateTime?
+  status                   RoundStatus             @default(IN_PROGRESS)
+  recurringConfigurationId String?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  deletedAt                DateTime?
+  guard                    User                    @relation("GuardRounds", fields: [guardId], references: [id])
+  client                   Client?                 @relation(fields: [clientId], references: [id])
+  recurringConfiguration   RecurringConfiguration? @relation(fields: [recurringConfigurationId], references: [id])
+}
+
+model SysConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model RecurringConfiguration {
+  id         String    @id @default(uuid())
+  title      String
+  clientId   String?
+  active     Boolean   @default(true)
+  softDelete Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  
+  client             Client?             @relation(fields: [clientId], references: [id])
+  recurringLocations RecurringLocation[]
+  guards             User[]
+  rounds             Round[]
+}
+
+model RecurringLocation {
+  id                       String                 @id @default(uuid())
+  recurringConfigurationId String
+  locationId               String
+  order                    Int                    @default(0)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  deletedAt                DateTime?
+  recurringConfiguration   RecurringConfiguration @relation(fields: [recurringConfigurationId], references: [id])
+  location                 Location               @relation(fields: [locationId], references: [id])
+  tasks                    RecurringTask[]
+}
+
+model RecurringTask {
+  id                  String            @id @default(uuid())
+  recurringLocationId String
+  description         String
+  reqPhoto            Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+  recurringLocation   RecurringLocation @relation(fields: [recurringLocationId], references: [id])
+}
+
+model Maintenance {
+  id           String            @id @default(uuid())
+  guardId      String
+  title        String
+  categoryId   String?
+  typeId       String?
+  category     String?
+  description  String?
+  media        Json?
+  latitude     Float?
+  longitude    Float?
+  status       MaintenanceStatus @default(PENDING)
+  resolvedAt   DateTime?
+  resolvedById String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+  guard        User              @relation(fields: [guardId], references: [id])
+  resolvedBy   User?             @relation("MaintenanceResolver", fields: [resolvedById], references: [id])
+  categoryRel  IncidentCategory? @relation(fields: [categoryId], references: [id])
+  type         IncidentType?     @relation(fields: [typeId], references: [id])
+  clientId     String?
+  client       Client?           @relation(fields: [clientId], references: [id])
+}
+
+enum AssignmentStatus {
+  PENDING
+  CHECKING
+  UNDER_REVIEW
+  REVIEWED
+  ANOMALY
+}
+
+enum ScanType {
+  ASSIGNMENT
+  RECURRING
+  FREE
+}
+
+enum IncidentStatus {
+  PENDING
+  ATTENDED
+}
+
+enum RoundStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum MaintenanceStatus {
+  PENDING
+  ATTENDED
+}
