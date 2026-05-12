@@ -8,62 +8,34 @@ jest.mock("@src/modules/common/middlewares/auth.middleware", () => ({
 }));
 
 describe("Rutas de Zonas (Integración)", () => {
-  let createdClientId: string;
   let createdZoneId: string;
   const uniqueName = `Zona de Prueba ${Date.now()}`;
-
-  beforeAll(async () => {
-    // Crear un cliente directamente en la BD para usar su ID en los tests de zonas
-    const client = await prismaClient.client.create({
-      data: { name: `Cliente Temp para Zonas ${Date.now()}` }
-    });
-    createdClientId = client.id;
-  });
-
-  afterAll(async () => {
-    // Limpieza del cliente
-    if (createdClientId) {
-      await prismaClient.client.delete({ where: { id: createdClientId } }).catch(() => {});
-    }
-  });
 
   describe("POST /api/v1/zones", () => {
     it("debe crear una nueva zona en la BD", async () => {
       const response = await request(app)
         .post("/api/v1/zones")
-        .send({ name: uniqueName, clientId: createdClientId });
+        .send({ name: uniqueName });
 
+      if (response.status !== 201) console.log("POST /api/v1/zones ERROR:", response.body);
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
       expect(response.body.data.name).toBe(uniqueName);
-      expect(response.body.data.clientId).toBe(createdClientId);
       
       createdZoneId = response.body.data.id;
     });
-
-    it("debe retornar 400 si falta el clientId", async () => {
-      const response = await request(app)
-        .post("/api/v1/zones")
-        .send({ name: "Nueva Zona" });
-
-      expect(response.status).toBe(400);
-    });
   });
 
-  describe("GET /api/v1/zones/client/:clientId", () => {
-    it("debe retornar una lista de zonas para un cliente desde la BD", async () => {
-      const response = await request(app).get(`/api/v1/zones/client/${createdClientId}`);
+  describe("GET /api/v1/zones", () => {
+    it("debe retornar una lista de zonas desde la BD", async () => {
+      const response = await request(app).get(`/api/v1/zones`);
 
+      if (response.status !== 200) console.log("GET /api/v1/zones ERROR:", response.body);
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.data.length).toBeGreaterThan(0);
-      expect(response.body.data[0].id).toBe(createdZoneId);
-    });
-
-    it("debe retornar 400 por UUID inválido", async () => {
-      const response = await request(app).get("/api/v1/zones/client/invalid-id");
-      expect(response.status).toBe(400);
+      expect(response.body.data.some((z: any) => z.id === createdZoneId)).toBe(true);
     });
   });
 
@@ -73,6 +45,7 @@ describe("Rutas de Zonas (Integración)", () => {
         .put(`/api/v1/zones/${createdZoneId}`)
         .send({ name: `${uniqueName} Actualizada`, active: false });
 
+      if (response.status !== 200) console.log("PUT /api/v1/zones/:id ERROR:", response.body);
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.name).toBe(`${uniqueName} Actualizada`);
@@ -84,6 +57,7 @@ describe("Rutas de Zonas (Integración)", () => {
     it("debe eliminar una zona de la BD", async () => {
       const response = await request(app).delete(`/api/v1/zones/${createdZoneId}`);
 
+      if (response.status !== 200) console.log("DELETE /api/v1/zones/:id ERROR:", response.body);
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.softDelete).toBe(true);

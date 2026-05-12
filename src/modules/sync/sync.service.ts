@@ -16,7 +16,6 @@ export interface SyncPushParams {
 
 const MODELS_TO_SYNC = [
   "role",
-  "client",
   "zone",
   "user",
   "schedule",

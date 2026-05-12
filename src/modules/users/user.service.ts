@@ -4,15 +4,13 @@ import {
   ITDataTableResponse,
 } from "@src/core/dto/datatable.dto";
 import { getPrismaPaginationParams } from "@src/core/utils/prisma-pagination.utils";
-import { OPERATIONAL_ROLES, ROLE_CLIENT } from "@src/core/config/constants";
+import { OPERATIONAL_ROLES } from "@src/core/config/constants";
 import { IUserCreateRequest, IUserUpdateRequest } from "./user.dto";
-import { deleteClientDataCascade } from "../clients/clients.cascade";
 
 import { IUserResponse } from "./user.response";
 
 export const getUsers = async (search?: string): Promise<IUserResponse[]> => {
   const where = {
-    role: { name: { not: ROLE_CLIENT } },
     ...(search && {
       OR: [
         { name: { contains: search } },
@@ -33,10 +31,8 @@ export const getUsers = async (search?: string): Promise<IUserResponse[]> => {
       active: true,
       isLoggedIn: true,
       roleId: true,
-      clientId: true,
       scheduleId: true,
       role: { select: { id: true, name: true, value: true } },
-      client: { select: { id: true, name: true } },
       schedule: { select: { id: true, name: true, startTime: true, endTime: true } },
       assignmentLogs: {
         orderBy: { createdAt: "desc" },
@@ -80,12 +76,6 @@ export const getDataTableUsers = async (
       prismaParams.where.role = { name: roleName };
   }
 
-  // Enforce excluding client role
-  prismaParams.where = {
-    ...prismaParams.where,
-    role: { ...prismaParams.where.role, name: { ...prismaParams.where.role?.name, not: ROLE_CLIENT } }
-  };
-
   const [rows, total] = await Promise.all([
     prismaClient.user.findMany({
       ...prismaParams,
@@ -98,10 +88,8 @@ export const getDataTableUsers = async (
         active: true,
         isLoggedIn: true,
         roleId: true,
-        clientId: true,
         scheduleId: true,
         role: { select: { id: true, name: true, value: true } },
-        client: { select: { id: true, name: true } },
         schedule: { select: { id: true, name: true, startTime: true, endTime: true } },
         assignments: {
           where: { status: { not: 'REVIEWED' } },
@@ -134,10 +122,8 @@ export const getUserByUsername = async (username: string) => {
       password: true,
       active: true,
       roleId: true,
-      clientId: true,
       scheduleId: true,
       role: { select: { id: true, name: true, value: true } },
-      client: { select: { id: true, active: true, name: true } },
       schedule: { select: { id: true, startTime: true, endTime: true, name: true } },
       assignmentLogs: {
         orderBy: { createdAt: "desc" },
@@ -159,20 +145,13 @@ export const addUser = async (data: IUserCreateRequest) => {
     if (roleObj) targetRoleId = roleObj.id;
   }
 
-  if (targetRoleId) {
-    const targetRole = await prismaClient.role.findUnique({ where: { id: targetRoleId } });
-    if (targetRole?.name === ROLE_CLIENT) {
-        throw new Error("No puedes crear usuarios de tipo CLIENTE desde este módulo.");
-    }
-  }
-
   return prismaClient.user.create({
     data: {
       ...userData,
       password: userData.password || "", // Prisma needs string
       roleId: targetRoleId!,
     } as any,
-    include: { schedule: true, role: true, client: true },
+    include: { schedule: true, role: true },
   });
 };
 
@@ -190,31 +169,11 @@ export const updateUser = async (id: string, data: IUserUpdateRequest) => {
   if (userData.roleId === null) delete userData.roleId;
 
   return prismaClient.$transaction(async (tx) => {
-    const currentUser = await tx.user.findUnique({ where: { id } });
-    
-    // Auto logging on clientId change
-    if (userData.clientId !== undefined && userData.clientId !== currentUser?.clientId) {
-        await tx.assignmentLog.create({
-            data: {
-                guardId: id,
-                clientId: (userData.clientId as string) || null,
-                type: userData.clientId ? "ASIGNADO" : "REMOVIDO",
-                notes: userData.clientId ? `Asignado a cliente` : "Removido de cliente",
-            }
-        });
-    }
-
-    const updatedUser = await tx.user.update({
+    return await tx.user.update({
       where: { id },
       data: userData as any,
-      include: { schedule: true, role: true, client: true },
+      include: { schedule: true, role: true },
     });
-
-    if (updatedUser.role?.name === ROLE_CLIENT) {
-        throw new Error("No puedes asignar el rol CLIENTE desde este módulo.");
-    }
-
-    return updatedUser;
   });
 };
 
@@ -230,12 +189,10 @@ export const getUserById = async (id: string) => {
       username: true,
       password: true,
       active: true,
-      clientId: true,
       roleId: true,
       scheduleId: true,
       role: { select: { id: true, name: true, value: true } },
       schedule: { select: { id: true, name: true, startTime: true, endTime: true } },
-      client: { select: { id: true, name: true, active: true } },
     },
   });
 };
@@ -258,19 +215,8 @@ export const getLoggedInGuards = async (excludeUserId: string) => {
 };
 
 export const deleteUser = async (id: string) => {
-  return prismaClient.$transaction(async (tx) => {
-    const user = await tx.user.findUnique({
-      where: { id },
-      include: { role: true },
-    });
-
-    if (user?.clientId && user.role?.name === ROLE_CLIENT) {
-      await deleteClientDataCascade(tx, user.clientId, id);
-    }
-
-    return tx.user.delete({
-      where: { id },
-    });
+  return prismaClient.user.delete({
+    where: { id },
   });
 };
 

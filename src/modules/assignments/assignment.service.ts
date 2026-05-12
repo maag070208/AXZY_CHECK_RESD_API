@@ -23,14 +23,6 @@ export const getDataTableAssignments = async (
 ): Promise<ITDataTableResponse<IAssignmentResponse>> => {
   const prismaParams = getPrismaPaginationParams(params);
 
-  // Map clientId to location relation
-  if (prismaParams.where.clientId) {
-    prismaParams.where.location = {
-      clientId: prismaParams.where.clientId,
-    };
-    delete prismaParams.where.clientId;
-  }
-
   const [rows, total] = await Promise.all([
     prisma.assignment.findMany({
       ...prismaParams,
@@ -46,7 +38,6 @@ export const getDataTableAssignments = async (
           select: {
             id: true,
             name: true,
-            clientId: true,
           },
         },
         guard: {

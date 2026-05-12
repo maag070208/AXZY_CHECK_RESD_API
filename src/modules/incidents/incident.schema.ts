@@ -10,7 +10,6 @@ export const CreateIncidentSchema = z.object({
     media: z.array(z.string()).optional(),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
-    clientId: z.string().uuid("El cliente debe ser un UUID válido").optional(),
   }),
 });
 

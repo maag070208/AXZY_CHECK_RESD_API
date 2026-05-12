@@ -23,7 +23,6 @@ export const createIncident = asyncHandler(async (req: Request, res: Response) =
     media,
     latitude,
     longitude,
-    clientId,
   } = req.body;
   const guardId = res.locals.user?.id;
 
@@ -42,7 +41,6 @@ export const createIncident = asyncHandler(async (req: Request, res: Response) =
     media: mediaFiles.length > 0 ? mediaFiles : undefined,
     latitude: latitude ? Number(latitude) : undefined,
     longitude: longitude ? Number(longitude) : undefined,
-    clientId: clientId as string,
   });
 
   await createAuditLog({
@@ -50,7 +48,7 @@ export const createIncident = asyncHandler(async (req: Request, res: Response) =
     module: "INCIDENTS",
     action: "CREATE",
     resourceId: result.id,
-    details: { title, clientId }
+    details: { title }
   });
 
   return res.status(201).json(createTResult(result));

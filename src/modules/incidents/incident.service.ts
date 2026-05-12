@@ -31,11 +31,6 @@ export const getDataTableIncidents = async (
     ];
   }
 
-  // Handle client filter
-  if (params.filters.clientId && params.filters.clientId !== "ALL") {
-    prismaParams.where.clientId = params.filters.clientId;
-  }
-
   const [rows, total] = await Promise.all([
     prismaClient.incident.findMany({
       ...prismaParams,
@@ -53,12 +48,10 @@ export const getDataTableIncidents = async (
         resolvedAt: true,
         resolvedById: true,
         status: true,
-        clientId: true,
         guard: { select: { id: true, name: true, lastName: true, username: true } },
         resolvedBy: { select: { id: true, name: true, lastName: true } },
         category: { select: { id: true, name: true } },
         type: { select: { id: true, name: true } },
-        client: { select: { id: true, name: true } },
       },
       orderBy: prismaParams.orderBy || { createdAt: "desc" },
     }),
@@ -79,31 +72,18 @@ export const createIncident = async (data: {
   media?: any;
   latitude?: number;
   longitude?: number;
-  clientId?: string;
 }) => {
-  const incident = await prismaClient.$transaction(async (tx) => {
-    let clientId = data.clientId;
-    if (!clientId) {
-      const guard = await tx.user.findUnique({
-        where: { id: data.guardId },
-        select: { clientId: true },
-      });
-      clientId = guard?.clientId || undefined;
-    }
-
-    return tx.incident.create({
-      data: {
-        guardId: data.guardId,
-        title: data.title,
-        categoryId: data.categoryId,
-        typeId: data.typeId,
-        description: data.description,
-        media: data.media,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        clientId: clientId,
-      },
-    });
+  const incident = await prismaClient.incident.create({
+    data: {
+      guardId: data.guardId,
+      title: data.title,
+      categoryId: data.categoryId,
+      typeId: data.typeId,
+      description: data.description,
+      media: data.media,
+      latitude: data.latitude,
+      longitude: data.longitude,
+    },
   });
 
   // Fire and forget EVERYTHING including relation fetching
@@ -129,20 +109,12 @@ export const createIncident = async (data: {
   return incident;
 };
 
-export const getIncidentsByGuard = async (guardId: string) => {
-  return prismaClient.incident.findMany({
-    where: { guardId },
-    orderBy: { createdAt: "desc" },
-  });
-};
-
 export const getIncidents = async (filters: {
   startDate?: Date;
   endDate?: Date;
   guardId?: string;
   category?: string;
   title?: string;
-  clientId?: string;
 }) => {
   const whereClause: any = {};
 
@@ -159,7 +131,6 @@ export const getIncidents = async (filters: {
   if (filters.category) whereClause.category = filters.category;
   if (filters.title)
     whereClause.title = { contains: filters.title, mode: "insensitive" };
-  if (filters.clientId) whereClause.clientId = filters.clientId;
 
   return prismaClient.incident.findMany({
     where: whereClause,

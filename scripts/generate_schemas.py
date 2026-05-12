@@ -2,31 +2,17 @@ import os
 import re
 
 models = {
-    "Client": """    Client:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        name: { type: string }
-        address: { type: string, nullable: true }
-        rfc: { type: string, nullable: true }
-        contactName: { type: string, nullable: true }
-        contactPhone: { type: string, nullable: true }
-        active: { type: boolean }
-        createdAt: { type: string, format: date-time }""",
     "Zone": """    Zone:
       type: object
       properties:
         id: { type: string, format: uuid }
-        clientId: { type: string, format: uuid }
         name: { type: string }
         active: { type: boolean }
-        client: { $ref: "#/components/schemas/ClientBasic", nullable: true }
         createdAt: { type: string, format: date-time }""",
     "Location": """    Location:
       type: object
       properties:
         id: { type: string, format: uuid }
-        clientId: { type: string, format: uuid, nullable: true }
         zoneId: { type: string, format: uuid, nullable: true }
         aisle: { type: string, nullable: true }
         spot: { type: string, nullable: true }
@@ -36,7 +22,6 @@ models = {
         isOccupied: { type: boolean }
         active: { type: boolean }
         zone: { $ref: "#/components/schemas/Zone", nullable: true }
-        client: { $ref: "#/components/schemas/ClientBasic", nullable: true }
         createdAt: { type: string, format: date-time }""",
     "Assignment": """    Assignment:
       type: object
@@ -55,13 +40,11 @@ models = {
       properties:
         id: { type: string, format: uuid }
         guardId: { type: string, format: uuid }
-        clientId: { type: string, format: uuid, nullable: true }
         startTime: { type: string, format: date-time }
         endTime: { type: string, format: date-time, nullable: true }
         status: { type: string }
         recurringConfigurationId: { type: string, format: uuid, nullable: true }
         guard: { $ref: "#/components/schemas/User", nullable: true }
-        client: { $ref: "#/components/schemas/ClientBasic", nullable: true }
         createdAt: { type: string, format: date-time }""",
     "Incident": """    Incident:
       type: object
@@ -78,9 +61,7 @@ models = {
         status: { type: string }
         resolvedAt: { type: string, format: date-time, nullable: true }
         resolvedById: { type: string, format: uuid, nullable: true }
-        clientId: { type: string, format: uuid, nullable: true }
         guard: { $ref: "#/components/schemas/User", nullable: true }
-        client: { $ref: "#/components/schemas/ClientBasic", nullable: true }
         createdAt: { type: string, format: date-time }""",
     "Maintenance": """    Maintenance:
       type: object
@@ -97,9 +78,7 @@ models = {
         status: { type: string }
         resolvedAt: { type: string, format: date-time, nullable: true }
         resolvedById: { type: string, format: uuid, nullable: true }
-        clientId: { type: string, format: uuid, nullable: true }
         guard: { $ref: "#/components/schemas/User", nullable: true }
-        client: { $ref: "#/components/schemas/ClientBasic", nullable: true }
         createdAt: { type: string, format: date-time }""",
     "Schedule": """    Schedule:
       type: object
@@ -115,9 +94,7 @@ models = {
       properties:
         id: { type: string, format: uuid }
         title: { type: string }
-        clientId: { type: string, format: uuid, nullable: true }
         active: { type: boolean }
-        client: { $ref: "#/components/schemas/ClientBasic", nullable: true }
         createdAt: { type: string, format: date-time }""",
     "Category": """    Category:
       type: object
@@ -180,12 +157,10 @@ for model_name, schema_def in models.items():
         messages: {{ type: array, items: {{ type: string }} }}
 """
 
-if "\n    TResultDatatableClient:\n" not in yaml_content:
+if "\n    TResultDatatableZone:\n" not in yaml_content:
     yaml_content += additional_schemas
 
 endpoint_mappings = {
-    "/clients/datatable": "TResultDatatableClient",
-    "/clients": "TResultListClient",
     "/zones/datatable": "TResultDatatableZone",
     "/zones": "TResultListZone",
     "/locations/datatable": "TResultDatatableLocation",
@@ -232,10 +207,6 @@ for path, ref_name in endpoint_mappings.items():
             application/json:
               schema: {{ $ref: "#/components/schemas/{ref_name}" }}"""
         yaml_content = re.sub(pattern_ok, replacement, yaml_content)
-
-# Handle specific /clients GET which might already use TResult instead of description: OK
-pattern_clients = r'(\/clients:\s*get:[\s\S]*?responses:[\s\S]*?"200":[\s\S]*?schema:\s*\{\s*\$ref:\s*"#/components/schemas/)(TResult)("\s*\})'
-yaml_content = re.sub(pattern_clients, rf'\1TResultListClient\3', yaml_content)
 
 with open("swagger.yaml", "w") as f:
     f.write(yaml_content)

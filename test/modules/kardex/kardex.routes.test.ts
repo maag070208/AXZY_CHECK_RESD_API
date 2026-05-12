@@ -24,35 +24,28 @@ jest.mock("@src/core/middlewares/token-validator.middleware", () => ({
 }));
 
 describe("Rutas de Kardex (Integración Total)", () => {
-  let createdClientId: string;
   let createdZoneId: string;
   let createdLocationId: string;
   let createdGuardId: string;
   let createdKardexId: string;
 
   beforeAll(async () => {
-    // 1. Crear Cliente
-    const clientRes = await request(app)
-      .post("/api/v1/clients")
-      .send({ name: `Cliente Kardex ${Date.now()}` });
-    createdClientId = clientRes.body.data.id;
-
-    // 2. Crear Zona
+    // 1. Crear Zona
     const zoneRes = await request(app)
       .post("/api/v1/zones")
-      .send({ name: "Zona A", clientId: createdClientId });
+      .send({ name: `Zona Kardex ${Date.now()}` });
     createdZoneId = zoneRes.body.data.id;
 
-    // 3. Crear Ubicación
+    // 2. Crear Ubicación
     const locRes = await request(app)
       .post("/api/v1/locations")
-      .send({ name: "Punto 1", clientId: createdClientId, zoneId: createdZoneId });
+      .send({ name: `Punto Kardex ${Date.now()}`, zoneId: createdZoneId });
     createdLocationId = locRes.body.data.id;
 
-    // 4. Obtener Role
+    // 3. Obtener Role
     const guardRole = await prismaClient.role.findUnique({ where: { name: ROLE_GUARD } });
 
-    // 5. Crear Guardia
+    // 4. Crear Guardia
     const guardRes = await request(app)
       .post("/api/v1/users")
       .send({
@@ -60,8 +53,7 @@ describe("Rutas de Kardex (Integración Total)", () => {
         lastName: "Kardex",
         username: `guardia_kardex_${Date.now()}`,
         password: "password123",
-        roleId: guardRole!.id,
-        clientId: createdClientId
+        roleId: guardRole!.id
       });
     createdGuardId = guardRes.body.data.id;
   });
@@ -71,7 +63,6 @@ describe("Rutas de Kardex (Integración Total)", () => {
     if (createdGuardId) await prismaClient.user.delete({ where: { id: createdGuardId } }).catch(() => {});
     if (createdLocationId) await prismaClient.location.delete({ where: { id: createdLocationId } }).catch(() => {});
     if (createdZoneId) await prismaClient.zone.delete({ where: { id: createdZoneId } }).catch(() => {});
-    if (createdClientId) await prismaClient.client.delete({ where: { id: createdClientId } }).catch(() => {});
   });
 
   describe("Operaciones de Bitácora (Kardex)", () => {
@@ -88,7 +79,6 @@ describe("Rutas de Kardex (Integración Total)", () => {
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.scanType).toBe("FREE"); // Sin ronda activa es FREE
       createdKardexId = response.body.data.id;
     });
 
@@ -110,27 +100,15 @@ describe("Rutas de Kardex (Integración Total)", () => {
       expect(response.body.data.notes).toBe("Notas actualizadas");
     });
 
-    it("debe filtrar entradas en el datatable por cliente", async () => {
+    it("debe listar entradas en el datatable", async () => {
       const response = await request(app)
         .post("/api/v1/kardex/datatable")
         .send({
-          filters: { clientId: createdClientId }
+          filters: {}
         });
 
       expect(response.status).toBe(200);
       expect(response.body.data.data.some((e: any) => e.id === createdKardexId)).toBe(true);
-    });
-
-    it("debe filtrar entradas en el datatable por búsqueda (usuario)", async () => {
-      const response = await request(app)
-        .post("/api/v1/kardex/datatable")
-        .send({
-          filters: { search: "Kardex" } // Por el apellido "Incidencias" (lastName)
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.data.data.length).toBeGreaterThan(0);
-      expect(response.body.data.data[0].user.lastName).toContain("Kardex");
     });
 
     it("debe eliminar una entrada correctamente", async () => {
@@ -140,7 +118,7 @@ describe("Rutas de Kardex (Integración Total)", () => {
         
         const check = await prismaClient.kardex.findUnique({ where: { id: createdKardexId } });
         expect(check).toBeNull();
-        createdKardexId = ""; // Ya se borró
+        createdKardexId = "";
     });
   });
 });

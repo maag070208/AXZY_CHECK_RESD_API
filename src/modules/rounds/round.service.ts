@@ -1,5 +1,4 @@
 import {
-  ROLE_CLIENT,
   ROUND_STATUS_COMPLETED,
   ROUND_STATUS_IN_PROGRESS,
   TIMELINE_EVENT_START,
@@ -22,7 +21,6 @@ import { IRoundResponse } from "./round.response";
 
 export const getDataTableRounds = async (
   params: ITDataTableFetchParams,
-  user?: any,
 ): Promise<ITDataTableResponse<IRoundResponse>> => {
   const customFilters = params.filters || {};
   const cleanFilters: any = {};
@@ -33,8 +31,6 @@ export const getDataTableRounds = async (
 
       if (key === "guard") {
         cleanFilters["guardId"] = value;
-      } else if (key === "client") {
-        cleanFilters["clientId"] = value;
       } else if (key === "search") {
         cleanFilters.guard = {
           OR: [
@@ -67,17 +63,12 @@ export const getDataTableRounds = async (
     }
   }
 
-  if (user?.role === ROLE_CLIENT && user.clientId) {
-    prismaParams.where.clientId = user.clientId;
-  }
-
   const [rows, total] = await Promise.all([
     prisma.round.findMany({
       ...prismaParams,
       select: {
         id: true,
         guardId: true,
-        clientId: true,
         startTime: true,
         endTime: true,
         status: true,
@@ -88,15 +79,12 @@ export const getDataTableRounds = async (
             name: true,
             lastName: true,
             username: true,
-            client: { select: { name: true } }
           }
         },
-        client: { select: { id: true, name: true } },
         recurringConfiguration: {
           select: {
             id: true,
             title: true,
-            client: { select: { name: true } }
           }
         }
       }
@@ -109,23 +97,11 @@ export const getDataTableRounds = async (
 
 export const startRound = async (
   guardId: string,
-  clientId?: string,
   recurringConfigurationId?: string,
 ): Promise<TResult<any>> => {
-    let targetClientId = clientId;
-
-    if (!targetClientId && recurringConfigurationId) {
-      const config = await prisma.recurringConfiguration.findUnique({
-        where: { id: recurringConfigurationId },
-        select: { clientId: true },
-      });
-      if (config?.clientId) targetClientId = config.clientId;
-    }
-
     const round = await prisma.round.create({
       data: {
         guardId,
-        clientId: targetClientId,
         recurringConfigurationId,
         status: ROUND_STATUS_IN_PROGRESS,
         startTime: now(),
@@ -180,7 +156,6 @@ export const getCurrentRound = async (
 export const getRounds = async (
   date?: string,
   guardId?: string,
-  user?: any,
   status?: string,
 ): Promise<TResult<any>> => {
   try {
@@ -192,12 +167,10 @@ export const getRounds = async (
     }
     if (guardId) where.guardId = guardId;
     if (status) where.status = status;
-    if (user?.role === ROLE_CLIENT && user.clientId)
-      where.clientId = user.clientId;
 
     const rounds = await prisma.round.findMany({
       where,
-      include: { guard: true, recurringConfiguration: true, client: true },
+      include: { guard: true, recurringConfiguration: true },
       orderBy: { startTime: "desc" },
     });
     return { success: true, data: rounds, messages: [] };
@@ -208,21 +181,18 @@ export const getRounds = async (
 
 export const getRoundDetail = async (
   id: string,
-  user?: any,
 ): Promise<TRoundDetailResult> => {
   try {
     const round = await prisma.round.findUnique({
       where: { id },
       include: {
-        guard: { include: { client: true } },
-        client: { include: { locations: true } },
+        guard: true,
         recurringConfiguration: {
           include: {
             recurringLocations: {
               include: { location: true },
               orderBy: { order: "asc" },
             },
-            client: true,
           },
         },
       },
@@ -230,18 +200,6 @@ export const getRoundDetail = async (
 
     if (!round)
       return { success: false, data: null, messages: ["Ronda no encontrada"] };
-
-    if (
-      user?.role === ROLE_CLIENT &&
-      user.clientId &&
-      round.clientId !== user.clientId
-    ) {
-      return {
-        success: false,
-        data: null,
-        messages: ["No tienes permiso para ver los detalles de esta ronda."],
-      };
-    }
 
     const start = round.startTime;
     const end = round.endTime || now();
@@ -303,9 +261,8 @@ export const getRoundDetail = async (
 
 export const generateRoundPDF = async (
   id: string,
-  user?: any,
 ): Promise<Buffer> => {
-  const detailRes = await getRoundDetail(id, user);
+  const detailRes = await getRoundDetail(id);
   if (!detailRes.success || !detailRes.data) {
     throw new Error(detailRes.messages?.[0] || "Ronda no encontrada");
   }

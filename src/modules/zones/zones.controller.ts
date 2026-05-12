@@ -9,8 +9,7 @@ export const getZonesDataTable = asyncHandler(async (req: Request, res: Response
 });
 
 export const getZones = asyncHandler(async (req: Request, res: Response) => {
-  const { clientId } = req.params;
-  const result = await zonesService.getZonesByClient(clientId);
+  const result = await zonesService.getZones();
   return res.status(200).json(createTResult(result));
 });
 

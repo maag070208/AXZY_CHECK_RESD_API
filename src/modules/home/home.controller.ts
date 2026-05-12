@@ -4,7 +4,6 @@ import { createTResult } from "@src/core/mappers/tresult.mapper";
 import { asyncHandler } from "@src/core/utils/asyncHandler";
 
 export const getDashboardStats = asyncHandler(async (req: Request, res: Response) => {
-  const user = res.locals.user;
-  const result = await homeService.getDashboardStats(user);
+  const result = await homeService.getDashboardStats();
   return res.status(result.success ? 200 : 500).json(result);
 });

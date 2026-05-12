@@ -28,7 +28,6 @@ jest.mock("@src/core/middlewares/token-validator.middleware", () => ({
 }));
 
 describe("Rutas de Historial de Rondas (Integración Total)", () => {
-  let createdClientId: string;
   let createdGuardId: string;
   let createdLocationId: string;
   let createdRoundId: string;
@@ -36,24 +35,17 @@ describe("Rutas de Historial de Rondas (Integración Total)", () => {
   beforeAll(async () => {
     const adminHeader = JSON.stringify({ id: "admin", role: "ADMIN" });
 
-    // 1. Crear Cliente
-    const clientRes = await request(app)
-      .post("/api/v1/clients")
-      .set("user", adminHeader)
-      .send({ name: `Cliente Historial ${Date.now()}` });
-    createdClientId = clientRes.body.data.id;
-
-    // 2. Crear Ubicación
+    // 1. Crear Ubicación
     const locRes = await request(app)
       .post("/api/v1/locations")
       .set("user", adminHeader)
-      .send({ name: "Punto A", clientId: createdClientId });
+      .send({ name: `Punto A ${Date.now()}` });
     createdLocationId = locRes.body.data.id;
 
-    // 3. Obtener Role
+    // 2. Obtener Role
     const guardRole = await prismaClient.role.findUnique({ where: { name: ROLE_GUARD } });
 
-    // 4. Crear Guardia
+    // 3. Crear Guardia
     const guardRes = await request(app)
       .post("/api/v1/users")
       .set("user", adminHeader)
@@ -62,8 +54,7 @@ describe("Rutas de Historial de Rondas (Integración Total)", () => {
         lastName: "Historial",
         username: `guardia_hist_${Date.now()}`,
         password: "password123",
-        roleId: guardRole!.id,
-        clientId: createdClientId
+        roleId: guardRole!.id
       });
     createdGuardId = guardRes.body.data.id;
   });
@@ -72,7 +63,6 @@ describe("Rutas de Historial de Rondas (Integración Total)", () => {
     if (createdRoundId) await prismaClient.round.delete({ where: { id: createdRoundId } }).catch(() => {});
     if (createdGuardId) await prismaClient.user.delete({ where: { id: createdGuardId } }).catch(() => {});
     if (createdLocationId) await prismaClient.location.delete({ where: { id: createdLocationId } }).catch(() => {});
-    if (createdClientId) await prismaClient.client.delete({ where: { id: createdClientId } }).catch(() => {});
   });
 
   describe("Ciclo de Vida de una Ronda", () => {
@@ -80,9 +70,7 @@ describe("Rutas de Historial de Rondas (Integración Total)", () => {
       const response = await request(app)
         .post("/api/v1/rounds/start")
         .set("user", JSON.stringify({ id: createdGuardId }))
-        .send({
-          clientId: createdClientId
-        });
+        .send({});
 
       expect(response.status).toBe(200);
       expect(response.body.data.status).toBe("IN_PROGRESS");
@@ -115,7 +103,6 @@ describe("Rutas de Historial de Rondas (Integración Total)", () => {
         .post("/api/v1/rounds/datatable")
         .send({
           filters: { 
-            client: createdClientId,
             status: "COMPLETED",
             search: "Historial" // Por el apellido del guardia
           }

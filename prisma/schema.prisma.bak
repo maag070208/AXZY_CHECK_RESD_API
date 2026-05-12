@@ -315,6 +315,26 @@ model Maintenance {
   type         IncidentType?     @relation(fields: [typeId], references: [id])
 }
 
+  id                     String                   @id
+  name                   String                   @unique
+  address                String?
+  rfc                    String?
+  contactName            String?
+  contactPhone           String?
+  active                 Boolean                  @default(true)
+  softDelete             Boolean                  @default(false)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  deletedAt              DateTime?
+  AssignmentLog          AssignmentLog[]
+  Incident               Incident[]
+  Location               Location[]
+  Maintenance            Maintenance[]
+  RecurringConfiguration RecurringConfiguration[]
+  Round                  Round[]
+  User                   User[]
+  Zone                   Zone[]
+}
 
 enum AssignmentStatus {
   PENDING

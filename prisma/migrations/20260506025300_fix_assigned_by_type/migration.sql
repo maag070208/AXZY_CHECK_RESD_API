@@ -1,1 +1,0 @@
-ALTER TABLE "Assignment" ALTER COLUMN "assignedBy" SET DATA TYPE TEXT;

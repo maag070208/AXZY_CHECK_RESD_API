@@ -23,7 +23,6 @@ export const createUserSchema = z.object({
       .string("La contraseña es requerida")
       .min(6, "La contraseña debe tener al menos 6 caracteres"),
     roleId: z.string("El rol es requerido").uuid("El rol debe ser valido"),
-    clientId: z.string().uuid().optional().nullable(),
     scheduleId: z.string().uuid().optional().nullable(),
     shiftStart: z.string().optional(),
     shiftEnd: z.string().optional(),

@@ -11,7 +11,6 @@ export interface IAssignmentResponse {
   location: {
     id: string;
     name: string;
-    clientId: string | null;
   };
   guard: {
     id: string;

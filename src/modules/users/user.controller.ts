@@ -35,10 +35,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError("Tu cuenta no está activa. Por favor contacta al administrador.", 403);
   }
 
-  if (user.client && !user.client.active) {
-    throw new AppError("Tu empresa no está activa en el sistema. Por favor contacta al administrador.", 403);
-  }
-
   // SHIFT CHECK
   const shiftCheck = checkUserShift({
     role: user.role?.name as string,
@@ -59,7 +55,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     lastName: user.lastName,
     username: user.username,
     role: user.role?.name,
-    clientId: user.clientId,
     shiftStart: user.schedule?.startTime,
     shiftEnd: user.schedule?.endTime,
   };

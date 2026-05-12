@@ -2,20 +2,13 @@ import { prismaClient as prisma } from "@src/core/config/database";
 
 export const getRecurringDataTable = async (body: any) => {
     const { page = 1, limit = 10, filters } = body;
-    const { title, search, clientId } = filters || {};
+    const { title, search } = filters || {};
     const filterText = search || title || "";
 
     const where: any = {
         softDelete: false,
         title: { contains: filterText, mode: "insensitive" }
     };
-
-    if (clientId) {
-        where.OR = [
-            { clientId: clientId },
-            { recurringLocations: { some: { location: { clientId: clientId } } } }
-        ];
-    }
 
     const [rows, total] = await Promise.all([
         prisma.recurringConfiguration.findMany({
@@ -24,12 +17,9 @@ export const getRecurringDataTable = async (body: any) => {
             take: limit,
             orderBy: { createdAt: "desc" },
             include: {
-                client: true,
                 recurringLocations: {
                     include: {
-                        location: {
-                            include: { client: true }
-                        },
+                        location: true,
                         tasks: true
                     }
                 },
@@ -43,20 +33,18 @@ export const getRecurringDataTable = async (body: any) => {
 };
 
 export const createRecurring = async (data: any) => {
-    const { title, locations, guardIds, clientId } = data;
+    const { title, locations, guardIds } = data;
 
     return prisma.$transaction(async (tx) => {
         const config = await tx.recurringConfiguration.create({
             data: {
                 title,
-                clientId: clientId as string,
                 guards: {
                     connect: (guardIds || []).map((id: string) => ({ id }))
                 }
             }
         });
 
-        // Use createManyAndReturn for high performance (Prisma 5.14+)
         const createdLocs = await (tx.recurringLocation as any).createManyAndReturn({
             data: locations.map((loc: any) => ({
                 recurringConfigurationId: config.id,
@@ -64,11 +52,9 @@ export const createRecurring = async (data: any) => {
             }))
         });
 
-        // Collect all tasks to create in bulk
         const tasksData: any[] = [];
         locations.forEach((loc: any) => {
             if (loc.tasks && loc.tasks.length > 0) {
-                // Find the corresponding created recurring location to get its ID
                 const rLoc = createdLocs.find((rl: any) => rl.locationId === (loc.locationId as string));
                 if (rLoc) {
                     loc.tasks.forEach((t: any) => {
@@ -87,17 +73,13 @@ export const createRecurring = async (data: any) => {
         }
 
         return config;
-    }, {
-        maxWait: 10000,
-        timeout: 30000
     });
 };
 
 export const updateRecurring = async (id: string, data: any) => {
-    const { title, locations, guardIds, clientId } = data;
+    const { title, locations, guardIds } = data;
 
     return prisma.$transaction(async (tx) => {
-        // Bulk delete old relations
         const oldLocations = await tx.recurringLocation.findMany({
             where: { recurringConfigurationId: id },
             select: { id: true }
@@ -107,19 +89,16 @@ export const updateRecurring = async (id: string, data: any) => {
         await tx.recurringTask.deleteMany({ where: { recurringLocationId: { in: oldLocIds } } });
         await tx.recurringLocation.deleteMany({ where: { recurringConfigurationId: id } });
 
-        // Update config
         const config = await tx.recurringConfiguration.update({
             where: { id },
             data: {
                 title,
-                clientId: clientId as string,
                 guards: {
                     set: (guardIds || []).map((id: string) => ({ id }))
                 }
             }
         });
 
-        // Bulk create new locations
         const createdLocs = await (tx.recurringLocation as any).createManyAndReturn({
             data: locations.map((loc: any) => ({
                 recurringConfigurationId: config.id,
@@ -148,9 +127,6 @@ export const updateRecurring = async (id: string, data: any) => {
         }
 
         return config;
-    }, {
-        maxWait: 10000,
-        timeout: 30000
     });
 };
 
@@ -167,9 +143,7 @@ export const getRecurringById = async (id: string) => {
         include: {
             recurringLocations: {
                 include: {
-                    location: {
-                        include: { client: true }
-                    },
+                    location: true,
                     tasks: true
                 }
             },
@@ -190,9 +164,7 @@ export const getRecurringByGuard = async (guardId: string) => {
         include: {
             recurringLocations: {
                 include: {
-                    location: {
-                        include: { client: true }
-                    },
+                    location: true,
                     tasks: true
                 }
             },
@@ -209,9 +181,7 @@ export const getAllRecurring = async () => {
         include: {
             recurringLocations: {
                 include: {
-                    location: {
-                        include: { client: true }
-                    },
+                    location: true,
                     tasks: true
                 }
             },

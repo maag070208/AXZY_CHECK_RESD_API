@@ -3,7 +3,6 @@ import { TIMELINE_EVENT_START, TIMELINE_EVENT_END, TIMELINE_EVENT_SCAN, TIMELINE
 
 export interface IRoundStartRequest {
   guardId: string;
-  clientId?: string;
   recurringConfigurationId?: string;
 }
 

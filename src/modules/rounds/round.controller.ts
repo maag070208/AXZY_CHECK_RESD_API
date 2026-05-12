@@ -7,19 +7,17 @@ import { AppError } from "@src/core/errors/AppError";
 import { createAuditLog } from "../audit/audit.service";
 
 export const getDataTable = asyncHandler(async (req: Request, res: Response) => {
-  const user = res.locals.user;
-  const result = await roundService.getDataTableRounds(req.body, user);
+  const result = await roundService.getDataTableRounds(req.body);
   return res.status(200).json(createTResult(result));
 });
 
 export const startRound = asyncHandler(async (req: Request, res: Response) => {
-  const { guardId, clientId, recurringConfigurationId } = req.body;
+  const { guardId, recurringConfigurationId } = req.body;
   const user = res.locals.user;
   const targetGuardId = user?.id || guardId;
 
   const result = await roundService.startRound(
     String(targetGuardId),
-    clientId as string,
     recurringConfigurationId as string,
   );
   
@@ -32,7 +30,7 @@ export const startRound = asyncHandler(async (req: Request, res: Response) => {
     module: "ROUNDS",
     action: "START",
     resourceId: (result.data as any)?.id,
-    details: { clientId, recurringConfigurationId }
+    details: { recurringConfigurationId }
   });
 
   return res.status(200).json(result);
@@ -67,11 +65,9 @@ export const getCurrentRound = asyncHandler(async (req: Request, res: Response) 
 
 export const getRounds = asyncHandler(async (req: Request, res: Response) => {
   const { date, guardId, status } = req.query;
-  const user = res.locals.user;
   const result = await roundService.getRounds(
     date ? String(date) : undefined,
     guardId as string,
-    user,
     status as string,
   );
   return res.status(result.success ? 200 : 500).json(result);
@@ -79,8 +75,7 @@ export const getRounds = asyncHandler(async (req: Request, res: Response) => {
 
 export const getRoundDetail = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const user = res.locals.user;
-  const result = await roundService.getRoundDetail(id, user);
+  const result = await roundService.getRoundDetail(id);
   if (!result.success) {
     throw new AppError(result.messages?.[0] || "Ronda no encontrada", 404);
   }
@@ -89,8 +84,7 @@ export const getRoundDetail = asyncHandler(async (req: Request, res: Response) =
 
 export const generateReport = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const user = res.locals.user;
-  const buffer = await roundService.generateRoundPDF(id, user);
+  const buffer = await roundService.generateRoundPDF(id);
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
@@ -102,8 +96,7 @@ export const generateReport = asyncHandler(async (req: Request, res: Response) =
 
 export const shareReport = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const user = res.locals.user;
-  const buffer = await roundService.generateRoundPDF(id, user);
+  const buffer = await roundService.generateRoundPDF(id);
 
   const storage = new StorageService();
   const bucket = process.env.AWS_BUCKET_NAME || "cfsp-s3-bucket-prod";

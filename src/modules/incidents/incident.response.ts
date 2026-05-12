@@ -14,7 +14,6 @@ export interface IIncidentResponse {
   resolvedAt: Date | null;
   resolvedById: string | null;
   status: IncidentStatus;
-  clientId: string | null;
   guard?: {
     id: string;
     name: string;
@@ -31,10 +30,6 @@ export interface IIncidentResponse {
     name: string;
   } | null;
   type?: {
-    id: string;
-    name: string;
-  } | null;
-  client?: {
     id: string;
     name: string;
   } | null;

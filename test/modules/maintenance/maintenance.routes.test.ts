@@ -35,7 +35,6 @@ jest.mock("@src/core/utils/emailSender", () => ({
 }));
 
 describe("Rutas de Mantenimiento (Integración Total)", () => {
-  let createdClientId: string;
   let createdGuardId: string;
   let createdAdminId: string;
   let createdCategoryId: string;
@@ -45,18 +44,15 @@ describe("Rutas de Mantenimiento (Integración Total)", () => {
   beforeAll(async () => {
     const adminHeader = JSON.stringify({ id: "admin", role: "ADMIN" });
 
-    // 1. Crear Cliente
-    const clientRes = await request(app)
-      .post("/api/v1/clients")
-      .set("user", adminHeader)
-      .send({ name: `Cliente para Mantenimiento ${Date.now()}` });
-    createdClientId = clientRes.body.data.id;
+    // 1. Obtener Roles
+    const guardRole = await prismaClient.role.findUnique({
+      where: { name: ROLE_GUARD },
+    });
+    const adminRole = await prismaClient.role.findUnique({
+      where: { name: ROLE_ADMIN },
+    });
 
-    // 2. Obtener Roles
-    const guardRole = await prismaClient.role.findUnique({ where: { name: ROLE_GUARD } });
-    const adminRole = await prismaClient.role.findUnique({ where: { name: ROLE_ADMIN } });
-
-    // 3. Crear Guardia
+    // 2. Crear Guardia
     const guardRes = await request(app)
       .post("/api/v1/users")
       .set("user", adminHeader)
@@ -66,11 +62,10 @@ describe("Rutas de Mantenimiento (Integración Total)", () => {
         username: `guardia_maint_${Date.now()}`,
         password: "password123",
         roleId: guardRole!.id,
-        clientId: createdClientId
       });
     createdGuardId = guardRes.body.data.id;
 
-    // 4. Crear Admin
+    // 3. Crear Admin
     const adminRes = await request(app)
       .post("/api/v1/users")
       .set("user", adminHeader)
@@ -79,11 +74,11 @@ describe("Rutas de Mantenimiento (Integración Total)", () => {
         lastName: "Mantenimiento",
         username: `admin_maint_${Date.now()}`,
         password: "password123",
-        roleId: adminRole!.id
+        roleId: adminRole!.id,
       });
     createdAdminId = adminRes.body.data.id;
 
-    // 5. Configurar Categoría de Mantenimiento (vía Settings)
+    // 4. Configurar Categoría de Mantenimiento (vía Settings)
     const catRes = await request(app)
       .post("/api/v1/settings/categories")
       .set("user", adminHeader)
@@ -92,30 +87,44 @@ describe("Rutas de Mantenimiento (Integración Total)", () => {
         value: "ELECTRIC",
         type: "MAINTENANCE",
         color: "#ffa500",
-        icon: "flash"
+        icon: "flash",
       });
     createdCategoryId = catRes.body.data.id;
 
-    // 6. Configurar Tipo de Mantenimiento
+    // 5. Configurar Tipo de Mantenimiento
     const typeRes = await request(app)
       .post("/api/v1/settings/types")
       .set("user", adminHeader)
       .send({
         categoryId: createdCategoryId,
         name: `Cambio de Foco ${Date.now()}`,
-        value: "CAMBIO_FOCO"
+        value: "CAMBIO_FOCO",
       });
     createdTypeId = typeRes.body.data.id;
   });
 
   afterAll(async () => {
     // Limpieza
-    if (createdMaintenanceId) await prismaClient.maintenance.delete({ where: { id: createdMaintenanceId } }).catch(() => {});
-    if (createdTypeId) await prismaClient.incidentType.delete({ where: { id: createdTypeId } }).catch(() => {});
-    if (createdCategoryId) await prismaClient.incidentCategory.delete({ where: { id: createdCategoryId } }).catch(() => {});
-    if (createdGuardId) await prismaClient.user.delete({ where: { id: createdGuardId } }).catch(() => {});
-    if (createdAdminId) await prismaClient.user.delete({ where: { id: createdAdminId } }).catch(() => {});
-    if (createdClientId) await prismaClient.client.delete({ where: { id: createdClientId } }).catch(() => {});
+    if (createdMaintenanceId)
+      await prismaClient.maintenance
+        .delete({ where: { id: createdMaintenanceId } })
+        .catch(() => {});
+    if (createdTypeId)
+      await prismaClient.incidentType
+        .delete({ where: { id: createdTypeId } })
+        .catch(() => {});
+    if (createdCategoryId)
+      await prismaClient.incidentCategory
+        .delete({ where: { id: createdCategoryId } })
+        .catch(() => {});
+    if (createdGuardId)
+      await prismaClient.user
+        .delete({ where: { id: createdGuardId } })
+        .catch(() => {});
+    if (createdAdminId)
+      await prismaClient.user
+        .delete({ where: { id: createdAdminId } })
+        .catch(() => {});
   });
 
   describe("Flujo Operativo de Mantenimiento", () => {
@@ -130,7 +139,6 @@ describe("Rutas de Mantenimiento (Integración Total)", () => {
           description: "El foco parpadea constantemente",
           latitude: 19.4326,
           longitude: -99.1332,
-          clientId: createdClientId
         });
 
       expect(response.status).toBe(201);
@@ -143,11 +151,13 @@ describe("Rutas de Mantenimiento (Integración Total)", () => {
       const response = await request(app)
         .post("/api/v1/maintenance/datatable")
         .send({
-          filters: { search: "luminaria" }
+          filters: { search: "luminaria" },
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.data.rows.some((r: any) => r.id === createdMaintenanceId)).toBe(true);
+      expect(
+        response.body.data.rows.some((r: any) => r.id === createdMaintenanceId),
+      ).toBe(true);
       expect(response.body.data.rows[0].categoryRel.id).toBe(createdCategoryId);
     });
 
@@ -163,11 +173,13 @@ describe("Rutas de Mantenimiento (Integración Total)", () => {
     });
 
     it("debe reflejar el cambio de estado en la consulta general", async () => {
-        const response = await request(app).get("/api/v1/maintenance");
-        
-        expect(response.status).toBe(200);
-        const maint = response.body.data.find((m: any) => m.id === createdMaintenanceId);
-        expect(maint.status).toBe("ATTENDED");
+      const response = await request(app).get("/api/v1/maintenance");
+
+      expect(response.status).toBe(200);
+      const maint = response.body.data.find(
+        (m: any) => m.id === createdMaintenanceId,
+      );
+      expect(maint.status).toBe("ATTENDED");
     });
   });
 });

@@ -26,10 +26,6 @@ export const getDataTableMaintenances = async (
     ];
   }
 
-  if (params.filters.clientId && params.filters.clientId !== "ALL") {
-    prismaParams.where.clientId = params.filters.clientId;
-  }
-
   const [rows, total] = await Promise.all([
     prismaClient.maintenance.findMany({
       ...prismaParams,
@@ -48,12 +44,10 @@ export const getDataTableMaintenances = async (
         resolvedAt: true,
         resolvedById: true,
         status: true,
-        clientId: true,
         guard: { select: { id: true, name: true, lastName: true, username: true } },
         resolvedBy: { select: { id: true, name: true, lastName: true } },
         categoryRel: { select: { id: true, name: true } },
         type: { select: { id: true, name: true } },
-        client: { select: { id: true, name: true } },
       },
       orderBy: prismaParams.orderBy || { createdAt: "desc" },
     }),
@@ -82,32 +76,19 @@ export const createMaintenance = async (data: {
   media?: any;
   latitude?: number;
   longitude?: number;
-  clientId?: string;
 }) => {
-  const maintenance = await prismaClient.$transaction(async (tx) => {
-    let clientId = data.clientId;
-    if (!clientId) {
-      const guard = await tx.user.findUnique({
-        where: { id: data.guardId },
-        select: { clientId: true },
-      });
-      clientId = guard?.clientId || undefined;
-    }
-
-    return tx.maintenance.create({
-      data: {
-        guardId: data.guardId,
-        title: data.title,
-        categoryId: data.categoryId,
-        typeId: data.typeId,
-        category: data.category,
-        description: data.description,
-        media: data.media,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        clientId: clientId,
-      },
-    });
+  const maintenance = await prismaClient.maintenance.create({
+    data: {
+      guardId: data.guardId,
+      title: data.title,
+      categoryId: data.categoryId,
+      typeId: data.typeId,
+      category: data.category,
+      description: data.description,
+      media: data.media,
+      latitude: data.latitude,
+      longitude: data.longitude,
+    },
   });
 
   setImmediate(async () => {
@@ -151,7 +132,6 @@ export const getMaintenances = async (filters: {
   guardId?: string;
   category?: string;
   title?: string;
-  clientId?: string;
 }) => {
   const whereClause: any = {};
 
@@ -168,7 +148,6 @@ export const getMaintenances = async (filters: {
   if (filters.category) whereClause.category = filters.category;
   if (filters.title)
     whereClause.title = { contains: filters.title, mode: "insensitive" };
-  if (filters.clientId) whereClause.clientId = filters.clientId;
 
   return prismaClient.maintenance.findMany({
     where: whereClause,

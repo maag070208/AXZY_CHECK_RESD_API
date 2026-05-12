@@ -2,7 +2,6 @@ export const ROLE_GUARD = "GUARD";
 export const ROLE_SHIFT = "SHIFT";
 export const ROLE_MAINTENANCE = "MAINT";
 export const ROLE_ADMIN = "ADMIN";
-export const ROLE_CLIENT = "RESDN";
 
 export const OPERATIONAL_ROLES = [ROLE_GUARD, ROLE_SHIFT, ROLE_MAINTENANCE];
 

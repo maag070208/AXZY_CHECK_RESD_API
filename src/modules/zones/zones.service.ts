@@ -2,7 +2,6 @@ import { prismaClient as prisma } from "@src/core/config/database";
 
 export const getZonesDataTable = async (body: any) => {
     const { filters } = body;
-    const clientId = filters?.clientId;
     const search = filters?.search;
 
     const where: any = {
@@ -10,31 +9,26 @@ export const getZonesDataTable = async (body: any) => {
         active: true
     };
 
-    if (clientId) {
-        where.clientId = clientId;
-    }
-
     if (search) {
         where.name = { contains: search, mode: 'insensitive' };
     }
 
     const rows = await prisma.zone.findMany({
         where,
-        include: { client: true },
         orderBy: { id: "desc" }
     });
 
     return { rows, total: rows.length };
 };
 
-export const getZonesByClient = async (clientId: string) => {
+export const getZones = async () => {
     return prisma.zone.findMany({
-        where: { clientId, softDelete: false, active: true },
+        where: { softDelete: false, active: true },
         orderBy: { id: "desc" }
     });
 };
 
-export const createZone = async (data: { clientId: string; name: string }) => {
+export const createZone = async (data: { name: string }) => {
     return prisma.zone.create({
         data
     });

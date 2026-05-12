@@ -35,7 +35,6 @@ describe("Flujo Crítico E2E: Gestión de Mantenimientos", () => {
   let guardHeader: string;
   let guardId: string;
   let maintenanceId: string;
-  let clientId: string;
 
   beforeAll(async () => {
     const adminRole = await prismaClient.role.findUnique({
@@ -57,12 +56,6 @@ describe("Flujo Crítico E2E: Gestión de Mantenimientos", () => {
     });
     adminHeader = JSON.stringify({ id: adminUser.id, role: "ADMIN" });
 
-    // Client
-    const client = await prismaClient.client.create({
-      data: { name: `Cliente E2E Maint ${Date.now()}` },
-    });
-    clientId = client.id;
-
     // Guard user
     const guardUser = await prismaClient.user.create({
       data: {
@@ -71,7 +64,6 @@ describe("Flujo Crítico E2E: Gestión de Mantenimientos", () => {
         username: `g_e2e_maint_${Date.now()}`,
         password: "password123",
         roleId: guardRole!.id,
-        clientId,
       },
     });
     guardId = guardUser.id;
@@ -79,11 +71,11 @@ describe("Flujo Crítico E2E: Gestión de Mantenimientos", () => {
   });
 
   afterAll(async () => {
-    if (clientId) {
-      await prismaClient.client
-        .delete({ where: { id: clientId } })
+    // Cleanup
+    if (guardId)
+      await prismaClient.user
+        .delete({ where: { id: guardId } })
         .catch(() => {});
-    }
   });
 
   it("Paso 1: Generar mantenimiento como guardia", async () => {
@@ -97,7 +89,6 @@ describe("Flujo Crítico E2E: Gestión de Mantenimientos", () => {
         media: randomMedia,
         latitude: 19.4326,
         longitude: -99.1332,
-        clientId,
       });
 
     expect(response.status).toBe(201);
