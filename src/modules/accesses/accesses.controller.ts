@@ -3,11 +3,28 @@ import { asyncHandler } from "@src/core/utils/asyncHandler";
 import { createTResult } from "@src/core/mappers/tresult.mapper";
 import { createAuditLog } from "../audit/audit.service";
 import * as accessesService from "./accesses.service";
+import { prismaClient as prisma } from "@src/core/config/database";
 
 export const getDataTable = asyncHandler(async (req: Request, res: Response) => {
-  const result = await accessesService.getDataTableAccesses(req.body);
+  let params = req.body;
+  if (res.locals.user?.role === "RESDN") {
+    const resident = await prisma.resident.findFirst({
+      where: { userId: res.locals.user.id, deletedAt: null }
+    });
+    if (resident) {
+      params = {
+        ...params,
+        filters: {
+          ...params.filters,
+          residentId: resident.id
+        }
+      };
+    }
+  }
+  const result = await accessesService.getDataTableAccesses(params);
   return res.status(200).json(createTResult(result));
 });
+
 
 export const getById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;

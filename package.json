@@ -54,6 +54,7 @@
     "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",
     "resend": "^6.12.2",
+    "stripe": "^15.0.0",
     "swagger-ui-express": "^4.6.0",
     "tsconfig-paths": "^4.2.0",
     "winston": "^3.19.0",

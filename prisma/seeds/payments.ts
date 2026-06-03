@@ -1,4 +1,4 @@
-import { PrismaClient, PaymentStatus } from "@prisma/client";
+import { PrismaClient, PaymentStatus, FeeType } from "@prisma/client";
 import { hackerLog } from "./logger";
 
 export const paymentsSeed = async (prisma: PrismaClient) => {
@@ -6,37 +6,26 @@ export const paymentsSeed = async (prisma: PrismaClient) => {
 
   const now = new Date();
 
+  // Clear existing payments and fees to prevent duplicates
+  await prisma.paymentLog.deleteMany();
+  await prisma.payment.deleteMany();
+  await prisma.fee.deleteMany();
+
   // ── Fees ─────────────────────────────────────────────────────────────────
   const fees = [
     {
-      name: "Cuota de Mantenimiento - Junio 2026",
-      description: "Cuota mensual de mantenimiento de áreas comunes",
-      amount: 500.00,
+      name: "Cuota de Mantenimiento",
+      description: "Cuota mensual de mantenimiento del residencial",
+      amount: 500.0,
       dueDate: new Date("2026-06-30"),
-    },
-    {
-      name: "Cuota de Mantenimiento - Mayo 2026",
-      description: "Cuota mensual de mantenimiento de áreas comunes",
-      amount: 500.00,
-      dueDate: new Date("2026-05-31"),
-    },
-    {
-      name: "Cuota de Seguridad - Q2 2026",
-      description: "Cuota trimestral de servicios de seguridad",
-      amount: 1200.00,
-      dueDate: new Date("2026-06-30"),
+      type: FeeType.MONTHLY,
     },
     {
       name: "Limpieza Cisterna",
       description: "Cuota especial para limpieza de cisterna comunitaria",
-      amount: 200.00,
+      amount: 200.0,
       dueDate: new Date("2026-07-15"),
-    },
-    {
-      name: "Reparación Portón Principal",
-      description: "Cuota extraordinaria para reparación del portón de entrada",
-      amount: 350.00,
-      dueDate: new Date("2026-06-20"),
+      type: FeeType.ONE_TIME,
     },
   ];
 
@@ -71,8 +60,8 @@ export const paymentsSeed = async (prisma: PrismaClient) => {
 
   let payIdx = 0;
   for (const resident of residents) {
-    // Each resident gets payments for first 2-3 fees
-    const numFees = (payIdx % 3) + 2;
+    // Each resident gets payments for first 2 fees
+    const numFees = (payIdx % 2) + 1;
     for (let f = 0; f < Math.min(numFees, feeIds.length); f++) {
       const status = statusCycle[payIdx % statusCycle.length];
       const fee = fees[f];
@@ -82,7 +71,10 @@ export const paymentsSeed = async (prisma: PrismaClient) => {
           residentId: resident.id,
           feeId: feeIds[f],
           amount: fee.amount,
-          reference: status === PaymentStatus.PAID ? `REF${String(100000 + payIdx).slice(1)}` : null,
+          reference:
+            status === PaymentStatus.PAID
+              ? `REF${String(100000 + payIdx).slice(1)}`
+              : null,
           status,
           paidAt: status === PaymentStatus.PAID ? now : null,
         },
@@ -106,5 +98,8 @@ export const paymentsSeed = async (prisma: PrismaClient) => {
 
   const feeCount = await prisma.fee.count();
   const payCount = await prisma.payment.count();
-  hackerLog.success("PAYMENTS", `${feeCount} fees, ${payCount} payments seeded`);
+  hackerLog.success(
+    "PAYMENTS",
+    `${feeCount} fees, ${payCount} payments seeded`,
+  );
 };

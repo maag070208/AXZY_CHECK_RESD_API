@@ -15,6 +15,14 @@ enum AccessType {
   SERVICE
 }
 
+enum AccessStatus {
+  PENDING
+  ACTIVE
+  FINISHED
+  EXPIRED
+  REJECTED
+}
+
 enum ComplaintStatus {
   OPEN
   IN_PROGRESS
@@ -142,6 +150,8 @@ model House {
   street    String
   block     String?
   reference String?
+  latitude  Float?
+  longitude Float?
   occupied  Boolean   @default(false)
   active    Boolean   @default(true)
   createdAt DateTime  @default(now())
@@ -162,6 +172,7 @@ model Resident {
   email     String?
   isOwner   Boolean   @default(false)
   active    Boolean   @default(true)
+  stripeCustomerId String? @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -173,6 +184,8 @@ model Resident {
   complaints  Complaint[]
   payments    Payment[]
   paymentLogs PaymentLog[]
+  subscriptions ResidentSubscription[]
+  residentFees ResidentFee[]
 }
 
 model ResidentContact {
@@ -220,16 +233,18 @@ model Visitor {
 }
 
 model Access {
-  id         String     @id @default(uuid())
+  id         String       @id @default(uuid())
   residentId String
   visitorId  String
   type       AccessType
-  qrCode     String?    @unique
+  status     AccessStatus @default(PENDING)
+  qrCode     String?      @unique
   validFrom  DateTime
   validUntil DateTime
-  used       Boolean    @default(false)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  used       Boolean      @default(false)
+  rejectionReason String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
   deletedAt  DateTime?
 
   resident   Resident    @relation(fields: [residentId], references: [id])
@@ -281,18 +296,73 @@ model Complaint {
   resolvedBy User?             @relation("ComplaintResolver", fields: [resolvedById], references: [id])
 }
 
+enum FeeType {
+  ONE_TIME
+  MONTHLY
+}
+
 model Fee {
   id          String    @id @default(uuid())
   name        String
   description String?
   amount      Decimal
+  type        FeeType   @default(ONE_TIME)
   dueDate     DateTime
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  payments Payment[]
+  payments      Payment[]
+  residentFees ResidentFee[]
+}
+
+model ResidentFee {
+  id         String    @id @default(uuid())
+  residentId String
+  feeId      String
+  active     Boolean   @default(true)
+  startDate  DateTime  @default(now())
+  endDate    DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  resident Resident @relation(fields: [residentId], references: [id])
+  fee      Fee      @relation(fields: [feeId], references: [id])
+
+  @@unique([residentId, feeId, deletedAt])
+}
+
+model SubscriptionPlan {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  amount        Decimal
+  stripePriceId String    @unique
+  active        Boolean   @default(true)
+  interval      String    @default("month")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  subscriptions ResidentSubscription[]
+}
+
+model ResidentSubscription {
+  id                   String    @id @default(uuid())
+  residentId           String
+  planId               String
+  stripeSubscriptionId String    @unique
+  status               String    @default("incomplete")
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+
+  resident Resident         @relation(fields: [residentId], references: [id])
+  plan     SubscriptionPlan @relation(fields: [planId], references: [id])
 }
 
 model Payment {
@@ -302,6 +372,8 @@ model Payment {
   amount     Decimal
   reference  String?
   status     PaymentStatus @default(PENDING)
+  stripeInvoiceId       String?
+  stripePaymentIntentId String?
   paidAt     DateTime?
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt

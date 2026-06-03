@@ -27,6 +27,7 @@ import accessesRoute from "./accesses/accesses.routes";
 import accessLogsRoute from "./access-logs/access-logs.routes";
 import complaintsRoute from "./complaints/complaints.routes";
 import paymentsRoute from "./payments/payments.routes";
+import { handleStripeWebhook } from "./payments/payments.webhook";
 import notificationsRoute from "./notifications/notifications.routes";
 
 const apiRouter = Router();
@@ -57,6 +58,7 @@ apiRouter.use("/visitors", visitorsRoute);
 apiRouter.use("/accesses", accessesRoute);
 apiRouter.use("/access-logs", accessLogsRoute);
 apiRouter.use("/complaints", complaintsRoute);
+apiRouter.post("/payments/webhook", handleStripeWebhook);
 apiRouter.use("/payments", paymentsRoute);
 apiRouter.use("/notifications", notificationsRoute);
 

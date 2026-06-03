@@ -1,6 +1,7 @@
 import { prismaClient as prisma } from "@src/core/config/database";
 import { IResidentCreateRequest, IResidentUpdateRequest } from "./residents.dto";
 import { IResidentResponse } from "./residents.response";
+import { hashPassword } from "@src/core/utils/security";
 import {
   ITDataTableFetchParams,
   ITDataTableResponse,
@@ -23,6 +24,7 @@ const residentSelect = {
       name: true,
       lastName: true,
       username: true,
+      active: true,
     },
   },
   house: {
@@ -32,6 +34,8 @@ const residentSelect = {
       street: true,
       block: true,
       reference: true,
+      latitude: true,
+      longitude: true,
       occupied: true,
     },
   },
@@ -97,11 +101,68 @@ export const getResidentById = async (id: string): Promise<IResidentResponse | n
   }) as Promise<IResidentResponse | null>;
 };
 
+const updateHouseOccupancy = async (tx: any, houseId: string) => {
+  const activeCount = await tx.resident.count({
+    where: {
+      houseId,
+      active: true,
+      deletedAt: null,
+    },
+  });
+
+  await tx.house.update({
+    where: { id: houseId },
+    data: {
+      occupied: activeCount > 0,
+    },
+  });
+};
+
 export const createResident = async (data: IResidentCreateRequest) => {
   return prisma.$transaction(async (tx) => {
+    let finalUserId = data.userId;
+
+    if (!finalUserId && data.user) {
+      const existing = await tx.user.findFirst({
+        where: { username: data.user.username },
+      });
+      if (existing) {
+        throw new Error("El nombre de usuario ya está registrado");
+      }
+
+      const roleObj = await tx.role.findUnique({
+        where: { name: "RESDN" },
+      });
+      if (!roleObj) {
+        throw new Error("Rol de residente (RESDN) no encontrado en el sistema");
+      }
+
+      let hashedPassword = "";
+      if (data.user.password) {
+        hashedPassword = await hashPassword(data.user.password);
+      }
+
+      const newUser = await tx.user.create({
+        data: {
+          name: data.user.name,
+          lastName: data.user.lastName || null,
+          username: data.user.username,
+          password: hashedPassword,
+          roleId: roleObj.id,
+          active: true,
+        },
+      });
+
+      finalUserId = newUser.id;
+    }
+
+    if (!finalUserId) {
+      throw new Error("Debe proporcionar el ID de usuario o los datos de un usuario nuevo");
+    }
+
     const resident = await tx.resident.create({
       data: {
-        userId: data.userId,
+        userId: finalUserId,
         houseId: data.houseId,
         phone: data.phone || null,
         email: data.email || null,
@@ -111,12 +172,7 @@ export const createResident = async (data: IResidentCreateRequest) => {
       select: residentSelect,
     });
 
-    if (resident.active) {
-      await tx.house.update({
-        where: { id: data.houseId },
-        data: { occupied: true },
-      });
-    }
+    await updateHouseOccupancy(tx, data.houseId);
 
     return resident;
   });
@@ -124,6 +180,11 @@ export const createResident = async (data: IResidentCreateRequest) => {
 
 export const updateResident = async (id: string, data: IResidentUpdateRequest) => {
   return prisma.$transaction(async (tx) => {
+    const oldResident = await tx.resident.findUnique({
+      where: { id },
+      select: { houseId: true },
+    });
+
     const updateData: any = {};
     if (data.userId !== undefined) updateData.userId = data.userId;
     if (data.houseId !== undefined) updateData.houseId = data.houseId;
@@ -146,15 +207,13 @@ export const updateResident = async (id: string, data: IResidentUpdateRequest) =
       select: residentSelect,
     });
 
-    // Check occupancy
-    const activeResidents = await tx.resident.count({
-      where: { houseId: resident.houseId, active: true, deletedAt: null },
-    });
+    // Update new house occupancy
+    await updateHouseOccupancy(tx, resident.houseId);
 
-    await tx.house.update({
-      where: { id: resident.houseId },
-      data: { occupied: activeResidents > 0 },
-    });
+    // If house changed, update old house occupancy too
+    if (oldResident && oldResident.houseId !== resident.houseId) {
+      await updateHouseOccupancy(tx, oldResident.houseId);
+    }
 
     return resident;
   });
@@ -171,16 +230,16 @@ export const deleteResident = async (id: string) => {
       select: residentSelect,
     });
 
-    // Check occupancy for house
-    const activeResidents = await tx.resident.count({
-      where: { houseId: resident.houseId, active: true, deletedAt: null },
-    });
-
-    await tx.house.update({
-      where: { id: resident.houseId },
-      data: { occupied: activeResidents > 0 },
-    });
+    await updateHouseOccupancy(tx, resident.houseId);
 
     return resident;
   });
 };
+
+export const getResidentByUserId = async (userId: string): Promise<IResidentResponse | null> => {
+  return prisma.resident.findFirst({
+    where: { userId, deletedAt: null },
+    select: residentSelect,
+  }) as Promise<IResidentResponse | null>;
+};
+

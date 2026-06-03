@@ -39,7 +39,13 @@ app.use([
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   }),
-  express.json(),
+  express.json({
+    verify: (req: any, res, buf) => {
+      if (req.originalUrl.startsWith('/api/v1/payments/webhook')) {
+        req.rawBody = buf.toString();
+      }
+    }
+  }),
   helmet({
     crossOriginResourcePolicy: false,
     contentSecurityPolicy: false,

@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prismaClient as prisma } from "../config/database";
 import { resend, transporter } from "../config/mail";
 import { logger } from "./logger";
-
-const prisma = new PrismaClient();
 
 export const sendIncidentEmail = async (incident: any, guard: any) => {
   try {

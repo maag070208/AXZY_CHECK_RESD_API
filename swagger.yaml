@@ -70,7 +70,7 @@ tags:
     description: 'Vehículos registrados'
   -
     name: visitors
-    description: 'Visitantes'
+    description: Visitantes
   -
     name: accesses
     description: 'Control de accesos con QR'
@@ -767,13 +767,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultDatatableHouse'
-  /houses/{id}:
+  '/houses/{id}':
     get:
       tags:
         - houses
       summary: 'Obtener casa por ID'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -791,7 +792,8 @@ paths:
         - houses
       summary: 'Actualizar casa'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -815,7 +817,8 @@ paths:
         - houses
       summary: 'Eliminar casa'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -864,13 +867,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultDatatableVehicle'
-  /vehicles/{id}:
+  '/vehicles/{id}':
     get:
       tags:
         - vehicles
       summary: 'Obtener vehículo por ID'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -888,7 +892,8 @@ paths:
         - vehicles
       summary: 'Actualizar vehículo'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -912,7 +917,8 @@ paths:
         - vehicles
       summary: 'Eliminar vehículo'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -961,13 +967,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultDatatableVisitor'
-  /visitors/{id}:
+  '/visitors/{id}':
     get:
       tags:
         - visitors
       summary: 'Obtener visitante por ID'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -985,7 +992,8 @@ paths:
         - visitors
       summary: 'Actualizar visitante'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1009,7 +1017,8 @@ paths:
         - visitors
       summary: 'Eliminar visitante'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1058,13 +1067,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultDatatableAccess'
-  /accesses/{id}:
+  '/accesses/{id}':
     get:
       tags:
         - accesses
       summary: 'Obtener acceso por ID'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1082,7 +1092,8 @@ paths:
         - accesses
       summary: 'Actualizar acceso'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1106,7 +1117,8 @@ paths:
         - accesses
       summary: 'Eliminar acceso'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1155,13 +1167,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultDatatableAccessLog'
-  /access-logs/{id}:
+  '/access-logs/{id}':
     get:
       tags:
         - access-logs
       summary: 'Obtener registro de acceso por ID'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1179,7 +1192,8 @@ paths:
         - access-logs
       summary: 'Actualizar registro (registrar salida)'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1234,13 +1248,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultDatatableComplaint'
-  /complaints/{id}:
+  '/complaints/{id}':
     get:
       tags:
         - complaints
       summary: 'Obtener queja por ID'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1258,7 +1273,8 @@ paths:
         - complaints
       summary: 'Actualizar queja'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1282,7 +1298,8 @@ paths:
         - complaints
       summary: 'Eliminar queja'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1324,13 +1341,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultComplaintCategory'
-  /complaints/categories/{id}:
+  '/complaints/categories/{id}':
     put:
       tags:
         - complaints
       summary: 'Actualizar categoría de queja'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1354,7 +1372,8 @@ paths:
         - complaints
       summary: 'Eliminar categoría de queja'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1403,13 +1422,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultDatatablePayment'
-  /payments/{id}:
+  '/payments/{id}':
     get:
       tags:
         - payments
       summary: 'Obtener pago por ID'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1427,7 +1447,8 @@ paths:
         - payments
       summary: 'Actualizar estado de pago'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1451,7 +1472,8 @@ paths:
         - payments
       summary: 'Eliminar pago'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1464,6 +1486,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultPayment'
+  /payments/fees/datatable:
+    post:
+      tags:
+        - payments
+      summary: 'Listado paginado de cuotas'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableFee'
   /payments/fees:
     get:
       tags:
@@ -1493,13 +1533,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultFee'
-  /payments/fees/{id}:
+  '/payments/fees/{id}':
     put:
       tags:
         - payments
       summary: 'Actualizar cuota'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1523,7 +1564,8 @@ paths:
         - payments
       summary: 'Eliminar cuota'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1536,6 +1578,97 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultFee'
+  /payments/resident-fees:
+    get:
+      tags:
+        - payments
+      summary: 'Obtener cuotas asignadas a residentes'
+      parameters:
+        - in: query
+          name: residentId
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultListResidentFeeBasic'
+    post:
+      tags:
+        - payments
+      summary: 'Asignar cuota a residente'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResidentFeeCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultResidentFee'
+  /payments/resident-fees/datatable:
+    post:
+      tags:
+        - payments
+      summary: 'Listado paginado de cuotas asignadas'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableResidentFee'
+  /payments/resident-fees/bulk:
+    post:
+      tags:
+        - payments
+      summary: 'Asignación masiva de cuota a múltiples residentes'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResidentFeeBulkCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultListResidentFee'
+  '/payments/resident-fees/{id}':
+    delete:
+      tags:
+        - payments
+      summary: 'Desasignar cuota de residente'
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultResidentFee'
   /notifications:
     post:
       tags:
@@ -1594,13 +1727,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultNotification'
-  /notifications/{id}:
+  '/notifications/{id}':
     get:
       tags:
         - notifications
       summary: 'Obtener notificación por ID'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1618,7 +1752,8 @@ paths:
         - notifications
       summary: 'Eliminar notificación'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1631,13 +1766,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultNotification'
-  /notifications/{id}/read:
+  '/notifications/{id}/read':
     patch:
       tags:
         - notifications
       summary: 'Marcar notificación como leída'
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1651,7 +1787,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/TResultNotification'
   /zones:
-
     post:
       tags:
         - zones
@@ -4117,6 +4252,10 @@ components:
           type: boolean
         active:
           type: boolean
+        stripeCustomerId:
+          type: string
+          format: uuid
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -4218,6 +4357,10 @@ components:
           type: string
         reference:
           type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
         occupied:
           type: boolean
         active:
@@ -4233,6 +4376,10 @@ components:
           type: string
         reference:
           type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
         occupied:
           type: boolean
         active:
@@ -7645,6 +7792,12 @@ components:
         reference:
           type: string
           nullable: true
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
         occupied:
           type: boolean
         active:
@@ -7674,6 +7827,12 @@ components:
           nullable: true
         reference:
           type: string
+          nullable: true
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
           nullable: true
         occupied:
           type: boolean
@@ -7771,6 +7930,10 @@ components:
           type: boolean
         active:
           type: boolean
+        stripeCustomerId:
+          type: string
+          format: uuid
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -7805,6 +7968,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PaymentLogBasic'
+        subscriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentSubscriptionBasic'
+        residentFees:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentFeeBasic'
     TResultListResident:
       type: object
       properties:
@@ -8190,6 +8361,9 @@ components:
           format: date-time
         used:
           type: boolean
+        rejectionReason:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -8214,6 +8388,8 @@ components:
           format: uuid
         type:
           $ref: '#/components/schemas/AccessType'
+        status:
+          $ref: '#/components/schemas/AccessStatus'
         qrCode:
           type: string
           nullable: true
@@ -8225,6 +8401,9 @@ components:
           format: date-time
         used:
           type: boolean
+        rejectionReason:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -8678,6 +8857,8 @@ components:
           nullable: true
         amount:
           type: number
+        type:
+          $ref: '#/components/schemas/FeeType'
         dueDate:
           type: string
           format: date-time
@@ -8697,6 +8878,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PaymentBasic'
+        residentFees:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentFeeBasic'
     TResultFee:
       type: object
       properties:
@@ -8766,6 +8951,14 @@ components:
         reference:
           type: string
           nullable: true
+        stripeInvoiceId:
+          type: string
+          format: uuid
+          nullable: true
+        stripePaymentIntentId:
+          type: string
+          format: uuid
+          nullable: true
         paidAt:
           type: string
           format: date-time
@@ -8799,6 +8992,14 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/PaymentStatus'
+        stripeInvoiceId:
+          type: string
+          format: uuid
+          nullable: true
+        stripePaymentIntentId:
+          type: string
+          format: uuid
+          nullable: true
         paidAt:
           type: string
           format: date-time
@@ -9059,6 +9260,425 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Notification'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    AccessStatus:
+      type: string
+      enum:
+        - PENDING
+        - ACTIVE
+        - FINISHED
+        - EXPIRED
+        - REJECTED
+    FeeType:
+      type: string
+      enum:
+        - ONE_TIME
+        - MONTHLY
+    ResidentFeeBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        feeId:
+          type: string
+          format: uuid
+        active:
+          type: boolean
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ResidentFee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        feeId:
+          type: string
+          format: uuid
+        active:
+          type: boolean
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resident:
+          $ref: '#/components/schemas/ResidentBasic'
+        fee:
+          $ref: '#/components/schemas/FeeBasic'
+    TResultResidentFee:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ResidentFee'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListResidentFee:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentFee'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableResidentFee:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/ResidentFee'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    ResidentFeeCreate:
+      type: object
+      properties:
+        residentId:
+          type: string
+          format: uuid
+          description: ID del residente
+        feeId:
+          type: string
+          format: uuid
+          description: ID de la cuota
+        startDate:
+          type: string
+          format: date-time
+          description: Fecha de inicio (opcional)
+    ResidentFeeBulkCreate:
+      type: object
+      properties:
+        residentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Lista de IDs de residentes
+        feeId:
+          type: string
+          format: uuid
+          description: ID de la cuota
+        startDate:
+          type: string
+          format: date-time
+          description: Fecha de inicio (opcional)
+    TResultListResidentFeeBasic:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentFeeBasic'
+        messages:
+          type: array
+          items:
+            type: string
+    SubscriptionPlanBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        stripePriceId:
+          type: string
+          format: uuid
+        active:
+          type: boolean
+        interval:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    SubscriptionPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        stripePriceId:
+          type: string
+          format: uuid
+        active:
+          type: boolean
+        interval:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        subscriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentSubscriptionBasic'
+    TResultSubscriptionPlan:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/SubscriptionPlan'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListSubscriptionPlan:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionPlan'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableSubscriptionPlan:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/SubscriptionPlan'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    ResidentSubscriptionBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        stripeSubscriptionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        currentPeriodStart:
+          type: string
+          format: date-time
+          nullable: true
+        currentPeriodEnd:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ResidentSubscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        stripeSubscriptionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        currentPeriodStart:
+          type: string
+          format: date-time
+          nullable: true
+        currentPeriodEnd:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resident:
+          $ref: '#/components/schemas/ResidentBasic'
+        plan:
+          $ref: '#/components/schemas/SubscriptionPlanBasic'
+    TResultResidentSubscription:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ResidentSubscription'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListResidentSubscription:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentSubscription'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableResidentSubscription:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/ResidentSubscription'
             total:
               type: integer
               example: 100

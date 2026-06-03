@@ -4,6 +4,8 @@ export interface IHouseResponse {
   street: string;
   block: string | null;
   reference: string | null;
+  latitude: number | null;
+  longitude: number | null;
   occupied: boolean;
   active: boolean;
   createdAt: Date;

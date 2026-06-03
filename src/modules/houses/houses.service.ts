@@ -12,6 +12,8 @@ const houseSelect = {
   street: true,
   block: true,
   reference: true,
+  latitude: true,
+  longitude: true,
   occupied: true,
   active: true,
   createdAt: true,
@@ -69,7 +71,9 @@ export const createHouse = async (data: IHouseCreateRequest): Promise<IHouseResp
       street: data.street,
       block: data.block || null,
       reference: data.reference || null,
-      occupied: data.occupied ?? false,
+      latitude: data.latitude !== undefined ? data.latitude : null,
+      longitude: data.longitude !== undefined ? data.longitude : null,
+      occupied: false, // Enforce unoccupied on creation until residents are assigned
       active: data.active ?? true,
     },
     select: houseSelect,
@@ -82,6 +86,8 @@ export const updateHouse = async (id: string, data: IHouseUpdateRequest): Promis
   if (data.street !== undefined) updateData.street = data.street;
   if (data.block !== undefined) updateData.block = data.block;
   if (data.reference !== undefined) updateData.reference = data.reference;
+  if (data.latitude !== undefined) updateData.latitude = data.latitude;
+  if (data.longitude !== undefined) updateData.longitude = data.longitude;
   if (data.occupied !== undefined) updateData.occupied = data.occupied;
   if (data.active !== undefined) updateData.active = data.active;
   if (data.softDelete !== undefined) {

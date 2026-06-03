@@ -57,3 +57,10 @@ export const removeResident = asyncHandler(async (req: Request, res: Response) =
 
   return res.status(200).json(createTResult(result));
 });
+
+export const getMe = asyncHandler(async (req: Request, res: Response) => {
+  const userId = res.locals.user?.id;
+  const result = await residentsService.getResidentByUserId(userId);
+  return res.status(200).json(createTResult(result));
+});
+

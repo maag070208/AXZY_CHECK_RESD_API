@@ -1,5 +1,11 @@
 export interface IResidentCreateRequest {
-  userId: string;
+  userId?: string;
+  user?: {
+    name: string;
+    lastName?: string;
+    username: string;
+    password?: string;
+  };
   houseId: string;
   phone?: string;
   email?: string;

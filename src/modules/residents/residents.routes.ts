@@ -5,6 +5,7 @@ import {
   addResident,
   putResident,
   removeResident,
+  getMe,
 } from "./residents.controller";
 import { authenticate } from "../common/middlewares/auth.middleware";
 import { validate } from "../../core/middlewares/validate.middleware";
@@ -20,6 +21,7 @@ const router = Router();
 router.use(authenticate);
 
 router.post("/datatable", validate(DataTableFetchParamsSchema), getDataTable);
+router.get("/me", getMe);
 router.get("/:id", validate(ResidentIdParamSchema), getById);
 router.post("/", validate(CreateResidentSchema), addResident);
 router.put("/:id", validate(UpdateResidentSchema), putResident);

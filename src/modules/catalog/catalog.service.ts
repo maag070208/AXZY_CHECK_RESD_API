@@ -4,11 +4,12 @@ import { logger } from "@src/core/utils/logger";
 
 export enum CatalogKey {
   ROLE = "role",
-  CLIENT = "client",
   LOCATION = "location",
   GUARD = "guard",
   INCIDENT_CATEGORY = "incident_category",
   INCIDENT_TYPE = "incident_type",
+  RESIDENT_USER = "resident_user",
+  HOUSE = "house",
 }
 
 export const getCatalog = async (key: string) => {
@@ -51,6 +52,32 @@ export const getCatalog = async (key: string) => {
           id: g.id,
           name: g.name,
           value: `${g.name} ${g.lastName}`,
+        }));
+      case CatalogKey.RESIDENT_USER:
+        const residents = await prismaClient.user.findMany({
+          where: {
+            role: { name: "RESDN" },
+            softDelete: false,
+            active: true,
+          },
+          select: { id: true, name: true, lastName: true },
+          orderBy: { name: "asc" },
+        });
+        return residents.map((r) => ({
+          id: r.id,
+          name: r.name,
+          value: `${r.name} ${r.lastName || ""}`,
+        }));
+      case CatalogKey.HOUSE:
+        const houses = await prismaClient.house.findMany({
+          where: { active: true },
+          select: { id: true, number: true, street: true, block: true },
+          orderBy: [{ street: "asc" }, { number: "asc" }],
+        });
+        return houses.map((h) => ({
+          id: h.id,
+          name: `${h.street} ${h.number} ${h.block ? `(${h.block})` : ""}`,
+          value: `${h.street} ${h.number} ${h.block ? `(${h.block})` : ""}`,
         }));
       default:
         throw new Error(`Catalog key "${key}" not found`);

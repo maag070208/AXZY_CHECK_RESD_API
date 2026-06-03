@@ -15,6 +15,7 @@ export interface IResidentResponse {
     name: string;
     lastName: string | null;
     username: string;
+    active?: boolean;
   };
   house?: {
     id: string;
@@ -22,6 +23,8 @@ export interface IResidentResponse {
     street: string;
     block: string | null;
     reference: string | null;
+    latitude: number | null;
+    longitude: number | null;
     occupied: boolean;
   };
 }

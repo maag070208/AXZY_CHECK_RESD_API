@@ -67,10 +67,10 @@ export const createAccessLog = async (data: IAccessLogCreateRequest): Promise<IA
       select: accessLogSelect,
     });
 
-    // Mark access as used
+    // Mark access as used and set status to ACTIVE
     await tx.access.update({
       where: { id: data.accessId },
-      data: { used: true },
+      data: { used: true, status: "ACTIVE" },
     });
 
     return log;
@@ -78,13 +78,25 @@ export const createAccessLog = async (data: IAccessLogCreateRequest): Promise<IA
 };
 
 export const updateAccessLog = async (id: string, data: IAccessLogUpdateRequest): Promise<IAccessLogResponse> => {
-  const updateData: any = {};
-  if (data.exitTime !== undefined) updateData.exitTime = new Date(data.exitTime);
-  if (data.notes !== undefined) updateData.notes = data.notes;
+  return prisma.$transaction(async (tx) => {
+    const updateData: any = {};
+    if (data.exitTime !== undefined) updateData.exitTime = new Date(data.exitTime);
+    if (data.notes !== undefined) updateData.notes = data.notes;
 
-  return prisma.accessLog.update({
-    where: { id },
-    data: updateData,
-    select: accessLogSelect,
+    const log = await tx.accessLog.update({
+      where: { id },
+      data: updateData,
+      select: accessLogSelect,
+    });
+
+    // If exit time is set, mark access status as FINISHED
+    if (data.exitTime) {
+      await tx.access.update({
+        where: { id: log.accessId },
+        data: { status: "FINISHED" },
+      });
+    }
+
+    return log;
   }) as Promise<IAccessLogResponse>;
 };
