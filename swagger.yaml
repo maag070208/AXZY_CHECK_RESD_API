@@ -15,8 +15,11 @@ tags:
     name: users
     description: 'Personal y administración'
   -
-    name: clients
-    description: 'Empresas clientes'
+    name: residents
+    description: Residentes
+  -
+    name: contacts
+    description: 'Contactos de residentes'
   -
     name: zones
     description: 'Áreas/Zonas geográficas'
@@ -59,6 +62,30 @@ tags:
   -
     name: home
     description: 'Métricas y dashboard de inicio'
+  -
+    name: houses
+    description: 'Casas del residencial'
+  -
+    name: vehicles
+    description: 'Vehículos registrados'
+  -
+    name: visitors
+    description: 'Visitantes'
+  -
+    name: accesses
+    description: 'Control de accesos con QR'
+  -
+    name: access-logs
+    description: 'Registros de entrada y salida'
+  -
+    name: complaints
+    description: 'Quejas y categorías'
+  -
+    name: payments
+    description: 'Pagos y cuotas'
+  -
+    name: notifications
+    description: 'Notificaciones a usuarios'
 paths:
   /home/stats:
     get:
@@ -480,52 +507,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultError'
-  /clients:
-    get:
-      tags:
-        - clients
-      summary: 'Listar clientes'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TResultListClient'
+  /residents:
     post:
       tags:
-        - clients
-      summary: 'Crear cliente'
+        - residents
+      summary: 'Crear residente'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientCreate'
+              $ref: '#/components/schemas/ResidentCreate'
       responses:
         '201':
           description: Creado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TResultListClient'
+                $ref: '#/components/schemas/TResultResident'
         '400':
-          description: 'Datos inválidos o cliente duplicado'
+          description: 'Datos inválidos'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultError'
-        '500':
-          description: 'Error interno del servidor'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TResultError'
-  /clients/datatable:
+  /residents/datatable:
     post:
       tags:
-        - clients
-      summary: 'Tabla paginada de clientes'
+        - residents
+      summary: 'Tabla paginada de residentes'
       requestBody:
         required: true
         content:
@@ -538,18 +548,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TResultDatatableClient'
-        '400':
-          description: 'Error en filtros'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TResultError'
-  '/clients/{id}':
+                $ref: '#/components/schemas/TResultDatatableResident'
+  '/residents/{id}':
     get:
       tags:
-        - clients
-      summary: 'Detalle de cliente'
+        - residents
+      summary: 'Detalle de residente'
       parameters:
         -
           in: path
@@ -564,22 +568,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TResultDatatableClient'
-        '400':
-          description: 'Error de paginación o filtros'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TResultError'
-        '500':
-          description: 'Error interno del servidor'
+                $ref: '#/components/schemas/TResultResident'
+        '404':
+          description: 'No encontrado'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultError'
     put:
       tags:
-        - clients
+        - residents
+      summary: 'Actualizar residente'
       parameters:
         -
           in: path
@@ -593,19 +592,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientUpdate'
+              $ref: '#/components/schemas/ResidentUpdate'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TResultListClient'
+                $ref: '#/components/schemas/TResultResident'
     delete:
       tags:
-        - clients
-      summary: 'Eliminar cliente (Cascading)'
-      description: "Elimina físicamente el cliente y todos sus datos relacionados (Zonas,\nUbicaciones, Rondas, Incidencias, Tareas). Los usuarios operativos (guardias)\nson desasignados (clientId = null) pero no eliminados."
+        - residents
+      summary: 'Eliminar residente'
       parameters:
         -
           in: path
@@ -620,8 +618,1040 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TResultListClient'
+                $ref: '#/components/schemas/TResultResident'
+  /contacts:
+    post:
+      tags:
+        - contacts
+      summary: 'Crear contacto de residente'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultContact'
+        '400':
+          description: 'Datos inválidos'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultError'
+  /contacts/datatable:
+    post:
+      tags:
+        - contacts
+      summary: 'Tabla paginada de contactos'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableContact'
+  '/contacts/{id}':
+    get:
+      tags:
+        - contacts
+      summary: 'Detalle de contacto'
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultContact'
+        '404':
+          description: 'No encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultError'
+    put:
+      tags:
+        - contacts
+      summary: 'Actualizar contacto'
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultContact'
+    delete:
+      tags:
+        - contacts
+      summary: 'Eliminar contacto'
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultContact'
+  /houses:
+    post:
+      tags:
+        - houses
+      summary: 'Crear casa'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HouseCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultHouse'
+  /houses/datatable:
+    post:
+      tags:
+        - houses
+      summary: 'Listado paginado de casas'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableHouse'
+  /houses/{id}:
+    get:
+      tags:
+        - houses
+      summary: 'Obtener casa por ID'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultHouse'
+    put:
+      tags:
+        - houses
+      summary: 'Actualizar casa'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HouseUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultHouse'
+    delete:
+      tags:
+        - houses
+      summary: 'Eliminar casa'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultHouse'
+  /vehicles:
+    post:
+      tags:
+        - vehicles
+      summary: 'Registrar vehículo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultVehicle'
+  /vehicles/datatable:
+    post:
+      tags:
+        - vehicles
+      summary: 'Listado paginado de vehículos'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableVehicle'
+  /vehicles/{id}:
+    get:
+      tags:
+        - vehicles
+      summary: 'Obtener vehículo por ID'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultVehicle'
+    put:
+      tags:
+        - vehicles
+      summary: 'Actualizar vehículo'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultVehicle'
+    delete:
+      tags:
+        - vehicles
+      summary: 'Eliminar vehículo'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultVehicle'
+  /visitors:
+    post:
+      tags:
+        - visitors
+      summary: 'Registrar visitante'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitorCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultVisitor'
+  /visitors/datatable:
+    post:
+      tags:
+        - visitors
+      summary: 'Listado paginado de visitantes'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableVisitor'
+  /visitors/{id}:
+    get:
+      tags:
+        - visitors
+      summary: 'Obtener visitante por ID'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultVisitor'
+    put:
+      tags:
+        - visitors
+      summary: 'Actualizar visitante'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitorUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultVisitor'
+    delete:
+      tags:
+        - visitors
+      summary: 'Eliminar visitante'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultVisitor'
+  /accesses:
+    post:
+      tags:
+        - accesses
+      summary: 'Crear acceso (genera QR automáticamente)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultAccess'
+  /accesses/datatable:
+    post:
+      tags:
+        - accesses
+      summary: 'Listado paginado de accesos'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableAccess'
+  /accesses/{id}:
+    get:
+      tags:
+        - accesses
+      summary: 'Obtener acceso por ID'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultAccess'
+    put:
+      tags:
+        - accesses
+      summary: 'Actualizar acceso'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultAccess'
+    delete:
+      tags:
+        - accesses
+      summary: 'Eliminar acceso'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultAccess'
+  /access-logs:
+    post:
+      tags:
+        - access-logs
+      summary: 'Registrar entrada (marca acceso como usado)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessLogCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultAccessLog'
+  /access-logs/datatable:
+    post:
+      tags:
+        - access-logs
+      summary: 'Listado paginado de registros de acceso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableAccessLog'
+  /access-logs/{id}:
+    get:
+      tags:
+        - access-logs
+      summary: 'Obtener registro de acceso por ID'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultAccessLog'
+    put:
+      tags:
+        - access-logs
+      summary: 'Actualizar registro (registrar salida)'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessLogUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultAccessLog'
+  /complaints:
+    post:
+      tags:
+        - complaints
+      summary: 'Crear queja'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplaintCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultComplaint'
+  /complaints/datatable:
+    post:
+      tags:
+        - complaints
+      summary: 'Listado paginado de quejas'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableComplaint'
+  /complaints/{id}:
+    get:
+      tags:
+        - complaints
+      summary: 'Obtener queja por ID'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultComplaint'
+    put:
+      tags:
+        - complaints
+      summary: 'Actualizar queja'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplaintUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultComplaint'
+    delete:
+      tags:
+        - complaints
+      summary: 'Eliminar queja'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultComplaint'
+  /complaints/categories:
+    get:
+      tags:
+        - complaints
+      summary: 'Listar categorías de quejas'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultListComplaintCategory'
+    post:
+      tags:
+        - complaints
+      summary: 'Crear categoría de queja'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplaintCategoryCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultComplaintCategory'
+  /complaints/categories/{id}:
+    put:
+      tags:
+        - complaints
+      summary: 'Actualizar categoría de queja'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplaintCategoryUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultComplaintCategory'
+    delete:
+      tags:
+        - complaints
+      summary: 'Eliminar categoría de queja'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultComplaintCategory'
+  /payments:
+    post:
+      tags:
+        - payments
+      summary: 'Registrar pago'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultPayment'
+  /payments/datatable:
+    post:
+      tags:
+        - payments
+      summary: 'Listado paginado de pagos'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatablePayment'
+  /payments/{id}:
+    get:
+      tags:
+        - payments
+      summary: 'Obtener pago por ID'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultPayment'
+    put:
+      tags:
+        - payments
+      summary: 'Actualizar estado de pago'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultPayment'
+    delete:
+      tags:
+        - payments
+      summary: 'Eliminar pago'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultPayment'
+  /payments/fees:
+    get:
+      tags:
+        - payments
+      summary: 'Listar cuotas activas'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultListFee'
+    post:
+      tags:
+        - payments
+      summary: 'Crear cuota'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeeCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultFee'
+  /payments/fees/{id}:
+    put:
+      tags:
+        - payments
+      summary: 'Actualizar cuota'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeeUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultFee'
+    delete:
+      tags:
+        - payments
+      summary: 'Eliminar cuota'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultFee'
+  /notifications:
+    post:
+      tags:
+        - notifications
+      summary: 'Crear notificación'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultNotification'
+  /notifications/datatable:
+    post:
+      tags:
+        - notifications
+      summary: 'Listado paginado de notificaciones'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableFetchParams'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultDatatableNotification'
+  /notifications/read-all:
+    post:
+      tags:
+        - notifications
+      summary: 'Marcar todas las notificaciones como leídas'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultNotification'
+  /notifications/{id}:
+    get:
+      tags:
+        - notifications
+      summary: 'Obtener notificación por ID'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultNotification'
+    delete:
+      tags:
+        - notifications
+      summary: 'Eliminar notificación'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultNotification'
+  /notifications/{id}/read:
+    patch:
+      tags:
+        - notifications
+      summary: 'Marcar notificación como leída'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TResultNotification'
   /zones:
+
     post:
       tags:
         - zones
@@ -638,33 +1668,28 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TResultDatatableClient'
+                $ref: '#/components/schemas/TResultDatatableZone'
         '400':
           description: 'Datos inválidos'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TResultError'
-  '/zones/client/{clientId}':
     get:
       tags:
         - zones
-      summary: 'Listar zonas de un cliente'
-      parameters:
-        -
-          in: path
-          name: clientId
-          required: true
-          schema:
-            type: string
-            format: uuid
+      summary: 'Listar todas las zonas activas'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TResultDatatableClient'
+                type: object
+                properties:
+                  success: {type: boolean}
+                  data: {type: array, items: {$ref: '#/components/schemas/ZoneBasic'}}
+                  messages: {type: array, items: {type: string}}
   /zones/datatable:
     post:
       tags:
@@ -2920,40 +3945,6 @@ components:
           type: string
           format: date-time
           nullable: true
-    ClientBasic:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        address:
-          type: string
-          nullable: true
-        rfc:
-          type: string
-          nullable: true
-        contactName:
-          type: string
-          nullable: true
-        contactPhone:
-          type: string
-          nullable: true
-        active:
-          type: boolean
-        softDelete:
-          type: boolean
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        deletedAt:
-          type: string
-          format: date-time
-          nullable: true
     User:
       type: object
       properties:
@@ -2977,6 +3968,15 @@ components:
         shiftEnd:
           type: string
           nullable: true
+        isLoggedIn:
+          type: boolean
+        roleId:
+          type: string
+          format: uuid
+        scheduleId:
+          type: string
+          format: uuid
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -2987,20 +3987,15 @@ components:
           type: string
           format: date-time
           nullable: true
-        isLoggedIn:
-          type: boolean
-        scheduleId:
-          type: string
-          format: uuid
-          nullable: true
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
-        roleId:
-          type: string
-          format: uuid
+        role:
+          $ref: '#/components/schemas/RoleBasic'
+        schedule:
+          $ref: '#/components/schemas/ScheduleBasic'
         assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignmentBasic'
+        createdAssignments:
           type: array
           items:
             $ref: '#/components/schemas/AssignmentBasic'
@@ -3028,20 +4023,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RoundBasic'
-        client:
-          $ref: '#/components/schemas/ClientBasic'
-        role:
-          $ref: '#/components/schemas/RoleBasic'
-        schedule:
-          $ref: '#/components/schemas/ScheduleBasic'
         recurringConfigurations:
           type: array
           items:
             $ref: '#/components/schemas/RecurringConfigurationBasic'
-        createdAssignments:
-          type: array
-          items:
-            $ref: '#/components/schemas/AssignmentBasic'
         assignmentLogs:
           type: array
           items:
@@ -3050,6 +4035,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AuditLogBasic'
+        residents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentBasic'
+        accessLogs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessLogBasic'
+        resolvedComplaints:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplaintBasic'
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationBasic'
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSessionBasic'
     TResultDatatableUser:
       type: object
       properties:
@@ -3090,60 +4095,534 @@ components:
           type: array
           items:
             type: string
-    ClientCreate:
+    ResidentBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        isOwner:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ResidentCreate:
+      type: object
+      required:
+        - userId
+        - houseId
+      properties:
+        userId:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        phone:
+          type: string
+        email:
+          type: string
+        isOwner:
+          type: boolean
+        active:
+          type: boolean
+    ResidentUpdate:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        phone:
+          type: string
+        email:
+          type: string
+        isOwner:
+          type: boolean
+        active:
+          type: boolean
+        softDelete:
+          type: boolean
+    TResultResident:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Resident'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableResident:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/Resident'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    HouseCreate:
+      type: object
+      required:
+        - number
+        - street
+      properties:
+        number:
+          type: string
+        street:
+          type: string
+        block:
+          type: string
+        reference:
+          type: string
+        occupied:
+          type: boolean
+        active:
+          type: boolean
+    HouseUpdate:
+      type: object
+      properties:
+        number:
+          type: string
+        street:
+          type: string
+        block:
+          type: string
+        reference:
+          type: string
+        occupied:
+          type: boolean
+        active:
+          type: boolean
+        softDelete:
+          type: boolean
+    VehicleCreate:
+      type: object
+      required:
+        - houseId
+        - plate
+      properties:
+        houseId:
+          type: string
+          format: uuid
+        plate:
+          type: string
+        brand:
+          type: string
+        model:
+          type: string
+        color:
+          type: string
+        active:
+          type: boolean
+    VehicleUpdate:
+      type: object
+      properties:
+        houseId:
+          type: string
+          format: uuid
+        plate:
+          type: string
+        brand:
+          type: string
+        model:
+          type: string
+        color:
+          type: string
+        active:
+          type: boolean
+        softDelete:
+          type: boolean
+    VisitorCreate:
       type: object
       required:
         - name
       properties:
         name:
           type: string
-        address:
+        phone:
           type: string
-        rfc:
+        email:
           type: string
-        contactName:
+        notes:
           type: string
-        contactPhone:
-          type: string
-        active:
-          type: boolean
-          default: true
-        appUsername:
-          type: string
-        appPassword:
-          type: string
-    ClientUpdate:
+    VisitorUpdate:
       type: object
       properties:
         name:
           type: string
-        address:
+        phone:
           type: string
-        rfc:
+        email:
           type: string
-        contactName:
-          type: string
-        contactPhone:
-          type: string
-        active:
-          type: boolean
-        appUsername:
-          type: string
-        appPassword:
+        notes:
           type: string
         softDelete:
           type: boolean
+    AccessCreate:
+      type: object
+      required:
+        - residentId
+        - visitorId
+        - type
+        - validFrom
+        - validUntil
+      properties:
+        residentId:
+          type: string
+          format: uuid
+        visitorId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/AccessType'
+        validFrom:
+          type: string
+          format: date-time
+        validUntil:
+          type: string
+          format: date-time
+    AccessUpdate:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/AccessType'
+        validFrom:
+          type: string
+          format: date-time
+        validUntil:
+          type: string
+          format: date-time
+        used:
+          type: boolean
+        softDelete:
+          type: boolean
+    AccessLogCreate:
+      type: object
+      required:
+        - accessId
+        - guardId
+      properties:
+        accessId:
+          type: string
+          format: uuid
+        guardId:
+          type: string
+          format: uuid
+        entryTime:
+          type: string
+          format: date-time
+        notes:
+          type: string
+    AccessLogUpdate:
+      type: object
+      properties:
+        exitTime:
+          type: string
+          format: date-time
+        notes:
+          type: string
+    ComplaintCategoryCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+    ComplaintCategoryUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+    ComplaintCreate:
+      type: object
+      required:
+        - residentId
+        - categoryId
+        - title
+        - description
+      properties:
+        residentId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        media:
+          type: object
+    ComplaintUpdate:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        media:
+          type: object
+        status:
+          $ref: '#/components/schemas/ComplaintStatus'
+        resolvedById:
+          type: string
+          format: uuid
+        resolvedAt:
+          type: string
+          format: date-time
+        softDelete:
+          type: boolean
+    FeeCreate:
+      type: object
+      required:
+        - name
+        - amount
+        - dueDate
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+        dueDate:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+    FeeUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+        dueDate:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        softDelete:
+          type: boolean
+    PaymentCreate:
+      type: object
+      required:
+        - residentId
+        - feeId
+        - amount
+      properties:
+        residentId:
+          type: string
+          format: uuid
+        feeId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        reference:
+          type: string
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        paidAt:
+          type: string
+          format: date-time
+    PaymentUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        reference:
+          type: string
+        paidAt:
+          type: string
+          format: date-time
+        softDelete:
+          type: boolean
+    NotificationCreate:
+      type: object
+      required:
+        - userId
+        - title
+        - message
+        - type
+      properties:
+        userId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        message:
+          type: string
+        type:
+          $ref: '#/components/schemas/NotificationType'
+    ContactBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        relationship:
+          type: string
+        canGenerateAccess:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ContactCreate:
+      type: object
+      required:
+        - residentId
+        - name
+        - relationship
+      properties:
+        residentId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        relationship:
+          type: string
+        canGenerateAccess:
+          type: boolean
+        active:
+          type: boolean
+    ContactUpdate:
+      type: object
+      properties:
+        residentId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        relationship:
+          type: string
+        canGenerateAccess:
+          type: boolean
+        active:
+          type: boolean
+        softDelete:
+          type: boolean
+    TResultContact:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/ContactBasic'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableContact:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/ContactBasic'
+            total:
+              type: integer
+        messages:
+          type: array
+          items:
+            type: string
     ZoneCreate:
       type: object
       required:
         - name
-        - clientId
       properties:
         name:
           type: string
-        clientId:
-          type: string
-          format: uuid
     ZoneUpdate:
       type: object
       properties:
@@ -3155,14 +4634,10 @@ components:
       type: object
       required:
         - name
-        - clientId
       properties:
         name:
           type: string
-          description: 'Nombre simple. El API lo convertirá a formato compuesto Cliente-Zona-Nombre'
-        clientId:
-          type: string
-          format: uuid
+          description: 'Nombre simple. El API lo convertirá a formato compuesto Zona-Nombre'
         zoneId:
           type: string
           format: uuid
@@ -3179,9 +4654,6 @@ components:
       properties:
         name:
           type: string
-        clientId:
-          type: string
-          format: uuid
         zoneId:
           type: string
           format: uuid
@@ -3289,10 +4761,6 @@ components:
         guardId:
           type: string
           format: uuid
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
         startTime:
           type: string
           format: date-time
@@ -3318,8 +4786,6 @@ components:
           nullable: true
         guard:
           $ref: '#/components/schemas/UserBasic'
-        client:
-          $ref: '#/components/schemas/ClientBasic'
         recurringConfiguration:
           $ref: '#/components/schemas/RecurringConfigurationBasic'
     RecurringConfiguration:
@@ -3330,10 +4796,6 @@ components:
           format: uuid
         title:
           type: string
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
         active:
           type: boolean
         softDelete:
@@ -3348,8 +4810,6 @@ components:
           type: string
           format: date-time
           nullable: true
-        client:
-          $ref: '#/components/schemas/ClientBasic'
         recurringLocations:
           type: array
           items:
@@ -3507,6 +4967,16 @@ components:
         longitude:
           type: number
           nullable: true
+        status:
+          $ref: '#/components/schemas/IncidentStatus'
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resolvedById:
+          type: string
+          format: uuid
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -3517,22 +4987,6 @@ components:
           type: string
           format: date-time
           nullable: true
-        resolvedAt:
-          type: string
-          format: date-time
-          nullable: true
-        resolvedById:
-          type: string
-          format: uuid
-          nullable: true
-        status:
-          $ref: '#/components/schemas/IncidentStatus'
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
-        client:
-          $ref: '#/components/schemas/ClientBasic'
         category:
           $ref: '#/components/schemas/IncidentCategoryBasic'
         type:
@@ -3603,12 +5057,6 @@ components:
           $ref: '#/components/schemas/IncidentCategoryBasic'
         type:
           $ref: '#/components/schemas/IncidentTypeBasic'
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
-        client:
-          $ref: '#/components/schemas/ClientBasic'
     Kardex:
       type: object
       properties:
@@ -3882,9 +5330,6 @@ components:
         id:
           type: string
           format: uuid
-        clientId:
-          type: string
-          format: uuid
         name:
           type: string
         active:
@@ -3901,8 +5346,6 @@ components:
           type: string
           format: date-time
           nullable: true
-        client:
-          $ref: '#/components/schemas/ClientBasic'
         locations:
           type: array
           items:
@@ -3953,10 +5396,6 @@ components:
         id:
           type: string
           format: uuid
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
         zoneId:
           type: string
           format: uuid
@@ -3991,8 +5430,6 @@ components:
           type: string
           format: date-time
           nullable: true
-        client:
-          $ref: '#/components/schemas/ClientBasic'
         zone:
           $ref: '#/components/schemas/ZoneBasic'
         tasks:
@@ -4067,8 +5504,6 @@ components:
           $ref: '#/components/schemas/AssignmentStatus'
         assignedBy:
           type: string
-        assignedByUser:
-          $ref: '#/components/schemas/UserBasic'
         notes:
           type: string
           nullable: true
@@ -4082,6 +5517,8 @@ components:
           type: string
           format: date-time
           nullable: true
+        assignedByUser:
+          $ref: '#/components/schemas/UserBasic'
         guard:
           $ref: '#/components/schemas/UserBasic'
         location:
@@ -4608,10 +6045,6 @@ components:
         guardId:
           type: string
           format: uuid
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
         type:
           type: string
         notes:
@@ -4622,8 +6055,6 @@ components:
           format: date-time
         guard:
           $ref: '#/components/schemas/UserBasic'
-        client:
-          $ref: '#/components/schemas/ClientBasic'
     TResultDatatableAssignmentLog:
       type: object
       properties:
@@ -5183,9 +6614,6 @@ components:
         id:
           type: string
           format: uuid
-        clientId:
-          type: string
-          format: uuid
         name:
           type: string
         active:
@@ -5237,6 +6665,15 @@ components:
         shiftEnd:
           type: string
           nullable: true
+        isLoggedIn:
+          type: boolean
+        roleId:
+          type: string
+          format: uuid
+        scheduleId:
+          type: string
+          format: uuid
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -5247,19 +6684,6 @@ components:
           type: string
           format: date-time
           nullable: true
-        isLoggedIn:
-          type: boolean
-        scheduleId:
-          type: string
-          format: uuid
-          nullable: true
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
-        roleId:
-          type: string
-          format: uuid
     TResultUser:
       type: object
       properties:
@@ -5281,10 +6705,6 @@ components:
         guardId:
           type: string
           format: uuid
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
         type:
           type: string
         notes:
@@ -5382,10 +6802,6 @@ components:
         id:
           type: string
           format: uuid
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
         zoneId:
           type: string
           format: uuid
@@ -5706,6 +7122,14 @@ components:
         longitude:
           type: number
           nullable: true
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resolvedById:
+          type: string
+          format: uuid
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -5715,18 +7139,6 @@ components:
         deletedAt:
           type: string
           format: date-time
-          nullable: true
-        resolvedAt:
-          type: string
-          format: date-time
-          nullable: true
-        resolvedById:
-          type: string
-          format: uuid
-          nullable: true
-        clientId:
-          type: string
-          format: uuid
           nullable: true
     TResultIncident:
       type: object
@@ -5749,10 +7161,6 @@ components:
         guardId:
           type: string
           format: uuid
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
         startTime:
           type: string
           format: date-time
@@ -5817,10 +7225,6 @@ components:
           format: uuid
         title:
           type: string
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
         active:
           type: boolean
         softDelete:
@@ -5970,10 +7374,6 @@ components:
           type: string
           format: date-time
           nullable: true
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
     TResultMaintenance:
       type: object
       properties:
@@ -5999,10 +7399,6 @@ components:
           nullable: true
         reportType:
           type: string
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
         configuration:
           type: object
         cronExpression:
@@ -6035,12 +7431,6 @@ components:
           nullable: true
         reportType:
           type: string
-        clientId:
-          type: string
-          format: uuid
-          nullable: true
-        client:
-          $ref: '#/components/schemas/ClientBasic'
         configuration:
           type: object
         cronExpression:
@@ -6099,6 +7489,1576 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/ReportConfiguration'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    AccessType:
+      type: string
+      enum:
+        - TEMPORARY
+        - RECURRING
+        - DELIVERY
+        - SERVICE
+    ComplaintStatus:
+      type: string
+      enum:
+        - OPEN
+        - IN_PROGRESS
+        - RESOLVED
+        - CLOSED
+    PaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - PAID
+        - CANCELLED
+        - FAILED
+    NotificationType:
+      type: string
+      enum:
+        - GENERAL
+        - ACCESS
+        - PAYMENT
+        - COMPLAINT
+        - EMERGENCY
+    UserSessionBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        loginAt:
+          type: string
+          format: date-time
+        logoutAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UserSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        loginAt:
+          type: string
+          format: date-time
+        logoutAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/UserBasic'
+    TResultUserSession:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/UserSession'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListUserSession:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSession'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableUserSession:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserSession'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    HouseBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        street:
+          type: string
+        block:
+          type: string
+          nullable: true
+        reference:
+          type: string
+          nullable: true
+        occupied:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    House:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        street:
+          type: string
+        block:
+          type: string
+          nullable: true
+        reference:
+          type: string
+          nullable: true
+        occupied:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        residents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentBasic'
+        vehicles:
+          type: array
+          items:
+            $ref: '#/components/schemas/VehicleBasic'
+    TResultHouse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/House'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListHouse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/House'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableHouse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/House'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    Resident:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        isOwner:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        user:
+          $ref: '#/components/schemas/UserBasic'
+        house:
+          $ref: '#/components/schemas/HouseBasic'
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentContactBasic'
+        accesses:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessBasic'
+        complaints:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplaintBasic'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentBasic'
+        paymentLogs:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentLogBasic'
+    TResultListResident:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resident'
+        messages:
+          type: array
+          items:
+            type: string
+    ResidentContactBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        relationship:
+          type: string
+        canGenerateAccess:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ResidentContact:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        relationship:
+          type: string
+        canGenerateAccess:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resident:
+          $ref: '#/components/schemas/ResidentBasic'
+    TResultResidentContact:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ResidentContact'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListResidentContact:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResidentContact'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableResidentContact:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/ResidentContact'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    VehicleBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        plate:
+          type: string
+        brand:
+          type: string
+          nullable: true
+        model:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        plate:
+          type: string
+        brand:
+          type: string
+          nullable: true
+        model:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        house:
+          $ref: '#/components/schemas/HouseBasic'
+    TResultVehicle:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Vehicle'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListVehicle:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vehicle'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableVehicle:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/Vehicle'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    VisitorBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    Visitor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        accesses:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessBasic'
+    TResultVisitor:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Visitor'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListVisitor:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Visitor'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableVisitor:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/Visitor'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    AccessBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        visitorId:
+          type: string
+          format: uuid
+        qrCode:
+          type: string
+          nullable: true
+        validFrom:
+          type: string
+          format: date-time
+        validUntil:
+          type: string
+          format: date-time
+        used:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    Access:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        visitorId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/AccessType'
+        qrCode:
+          type: string
+          nullable: true
+        validFrom:
+          type: string
+          format: date-time
+        validUntil:
+          type: string
+          format: date-time
+        used:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resident:
+          $ref: '#/components/schemas/ResidentBasic'
+        visitor:
+          $ref: '#/components/schemas/VisitorBasic'
+        accessLogs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessLogBasic'
+    TResultAccess:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Access'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListAccess:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Access'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableAccess:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/Access'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    AccessLogBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        accessId:
+          type: string
+          format: uuid
+        guardId:
+          type: string
+          format: uuid
+        entryTime:
+          type: string
+          format: date-time
+        exitTime:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AccessLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        accessId:
+          type: string
+          format: uuid
+        guardId:
+          type: string
+          format: uuid
+        entryTime:
+          type: string
+          format: date-time
+        exitTime:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        access:
+          $ref: '#/components/schemas/AccessBasic'
+        guard:
+          $ref: '#/components/schemas/UserBasic'
+    TResultAccessLog:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/AccessLog'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListAccessLog:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessLog'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableAccessLog:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/AccessLog'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    ComplaintCategoryBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        icon:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ComplaintCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        icon:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        complaints:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplaintBasic'
+    TResultComplaintCategory:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ComplaintCategory'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListComplaintCategory:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplaintCategory'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableComplaintCategory:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/ComplaintCategory'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    ComplaintBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        media:
+          type: object
+          nullable: true
+        resolvedById:
+          type: string
+          format: uuid
+          nullable: true
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    Complaint:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        media:
+          type: object
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ComplaintStatus'
+        resolvedById:
+          type: string
+          format: uuid
+          nullable: true
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resident:
+          $ref: '#/components/schemas/ResidentBasic'
+        category:
+          $ref: '#/components/schemas/ComplaintCategoryBasic'
+        resolvedBy:
+          $ref: '#/components/schemas/UserBasic'
+    TResultComplaint:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Complaint'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListComplaint:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Complaint'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableComplaint:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/Complaint'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    FeeBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        dueDate:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    Fee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        dueDate:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentBasic'
+    TResultFee:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Fee'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListFee:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fee'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableFee:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/Fee'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    PaymentBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        feeId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        reference:
+          type: string
+          nullable: true
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        residentId:
+          type: string
+          format: uuid
+        feeId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        reference:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resident:
+          $ref: '#/components/schemas/ResidentBasic'
+        fee:
+          $ref: '#/components/schemas/FeeBasic'
+        paymentLogs:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentLogBasic'
+    TResultPayment:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Payment'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListPayment:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatablePayment:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/Payment'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    PaymentLogBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        paymentId:
+          type: string
+          format: uuid
+          nullable: true
+        residentId:
+          type: string
+          format: uuid
+        action:
+          type: string
+        amount:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    PaymentLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        paymentId:
+          type: string
+          format: uuid
+          nullable: true
+        residentId:
+          type: string
+          format: uuid
+        action:
+          type: string
+        statusFrom:
+          $ref: '#/components/schemas/PaymentStatus'
+          nullable: true
+        statusTo:
+          $ref: '#/components/schemas/PaymentStatus'
+        amount:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        payment:
+          $ref: '#/components/schemas/PaymentBasic'
+        resident:
+          $ref: '#/components/schemas/ResidentBasic'
+    TResultPaymentLog:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/PaymentLog'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListPaymentLog:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentLog'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatablePaymentLog:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/PaymentLog'
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+        messages:
+          type: array
+          items:
+            type: string
+    NotificationBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        message:
+          type: string
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/UserBasic'
+    TResultNotification:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Notification'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultListNotification:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        messages:
+          type: array
+          items:
+            type: string
+    TResultDatatableNotification:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                $ref: '#/components/schemas/Notification'
             total:
               type: integer
               example: 100

@@ -23,7 +23,6 @@ export const getReportConfigurations = async (
         where,
         skip,
         take: limit,
-        include: { client: { select: { id: true, name: true } } },
         orderBy: { createdAt: "desc" },
       }),
       prisma.reportConfiguration.count({ where }),

@@ -6,17 +6,12 @@ export interface IUserResponse {
   active: boolean;
   isLoggedIn: boolean;
   roleId: string;
-  clientId: string | null;
   scheduleId: string | null;
   role: {
     id: string;
     name: string;
     value: string;
   };
-  client?: {
-    id: string;
-    name: string;
-  } | null;
   schedule?: {
     id: string;
     name: string;

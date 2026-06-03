@@ -15,7 +15,6 @@ export interface IMaintenanceResponse {
   resolvedAt: Date | null;
   resolvedById: string | null;
   status: MaintenanceStatus;
-  clientId: string | null;
   guard?: {
     id: string;
     name: string;
@@ -32,10 +31,6 @@ export interface IMaintenanceResponse {
     name: string;
   } | null;
   type?: {
-    id: string;
-    name: string;
-  } | null;
-  client?: {
     id: string;
     name: string;
   } | null;

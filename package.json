@@ -1,5 +1,5 @@
 {
-  "name": "axzy_park_api",
+  "name": "axzy_checkapp_api",
   "version": "1.0.0",
   "main": "index.ts",
   "license": "MIT",
@@ -18,7 +18,6 @@
     "prisma:regenerate": "yarn prisma:generate && yarn prisma:migrate && yarn prisma:seed",
     "test": "jest",
     "swagger": "node scripts/autodoc_prisma.js"
-
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

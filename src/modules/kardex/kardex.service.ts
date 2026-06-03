@@ -53,20 +53,16 @@ export const registerCheck = async (data: {
     const activeRound = await prismaClient.round.findFirst({
       where: { guardId: data.userId, status: ROUND_STATUS_IN_PROGRESS },
       include: {
-        client: { include: { locations: true } },
         recurringConfiguration: { include: { recurringLocations: true } },
       },
     });
 
-    const isPartOfClient = activeRound?.client?.locations.some(
-      (l: any) => l.id === data.locationId,
-    );
     const isPartOfRecurring =
       activeRound?.recurringConfiguration?.recurringLocations.some(
         (rl: any) => rl.locationId === data.locationId,
       );
 
-    if (isPartOfClient || isPartOfRecurring) {
+    if (isPartOfRecurring) {
       finalScanType = ScanType.RECURRING;
       finalAssignmentId = undefined; // Ensure no assignment link for recurring
     } else {
@@ -222,9 +218,7 @@ export const getDataTableKardex = async (params: {
     where.locationId = filters.locationId;
   }
 
-  if (filters.clientId) {
-    where.location = { clientId: filters.clientId };
-  }
+
 
   if (filters.search) {
     where.user = {
@@ -291,7 +285,6 @@ export const getDataTableKardex = async (params: {
           select: {
             id: true,
             name: true,
-            clientId: true,
           },
         },
         assignment: {

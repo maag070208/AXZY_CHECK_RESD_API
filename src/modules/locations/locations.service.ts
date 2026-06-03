@@ -1,7 +1,6 @@
 import { prismaClient as prisma } from "@src/core/config/database";
 import {
   PDF_COLOR_BLACK,
-  PDF_COLOR_SUCCESS,
   PDF_COLOR_WHITE,
 } from "@src/core/config/constants";
 import {
@@ -11,6 +10,9 @@ import {
 import { getPrismaPaginationParams } from "@src/core/utils/prisma-pagination.utils";
 import fs from "fs";
 import path from "path";
+import PDFDocument from "pdfkit";
+import QRCode from "qrcode";
+import { logger } from "@src/core/utils/logger";
 
 export const getDataTableLocations = async (
   params: ITDataTableFetchParams,
@@ -21,11 +23,6 @@ export const getDataTableLocations = async (
     const skip = (Math.max(1, Number(page)) - 1) * take;
     const searchTerm = filters?.name || "";
 
-    // Add clientId filter if provided
-    let clientIdFilter = undefined;
-    if (filters?.clientId) {
-      clientIdFilter = filters.clientId;
-    }
     let zoneIdFilter = undefined;
     if (filters?.zoneId) {
       zoneIdFilter = filters.zoneId;
@@ -39,17 +36,13 @@ export const getDataTableLocations = async (
         );
 
         let query = `
-                SELECT l.*, c.name as "clientName" FROM "Location" l
-                LEFT JOIN "Client" c ON c.id = l."clientId"
+                SELECT l.* FROM "Location" l
                 WHERE l."softDelete" = false
                 AND (
                     unaccent(l."name") ILIKE unaccent(${search}) OR
                     unaccent(l."reference") ILIKE unaccent(${search})
                 )
             `;
-        if (clientIdFilter) {
-          query += ` AND l."clientId" = '${clientIdFilter}'`;
-        }
         if (zoneIdFilter) {
           query += ` AND l."zoneId" = '${zoneIdFilter}'`;
         }
@@ -65,9 +58,6 @@ export const getDataTableLocations = async (
                     unaccent(l."reference") ILIKE unaccent(${search})
                 )
             `;
-        if (clientIdFilter) {
-          countQuery += ` AND l."clientId" = '${clientIdFilter}'`;
-        }
         if (zoneIdFilter) {
           countQuery += ` AND l."zoneId" = '${zoneIdFilter}'`;
         }
@@ -84,9 +74,6 @@ export const getDataTableLocations = async (
       ...prismaParams.where,
       softDelete: false,
     };
-    if (clientIdFilter) {
-      whereClause.clientId = clientIdFilter;
-    }
     if (zoneIdFilter) {
       whereClause.zoneId = zoneIdFilter;
     }
@@ -96,7 +83,6 @@ export const getDataTableLocations = async (
         ...prismaParams,
         where: whereClause,
         include: {
-          client: { select: { name: true } },
           zone: { select: { name: true } },
           _count: { select: { tasks: true } },
         },
@@ -114,20 +100,16 @@ export const getDataTableLocations = async (
   }
 };
 
-export const getAllLocations = async (clientId?: string) => {
+export const getAllLocations = async () => {
   const where: any = { softDelete: false };
-  if (clientId) {
-    where.clientId = clientId;
-  }
   return await prisma.location.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { client: { select: { name: true } }, tasks: true },
+    include: { tasks: true },
   });
 };
 
 export const createLocation = async (data: {
-  clientId: string;
   zoneId?: string;
   name: string;
   reference?: string;
@@ -165,10 +147,6 @@ export const getAvailableLocation = async () => {
     where: { active: true, softDelete: false },
   });
 };
-
-import PDFDocument from "pdfkit";
-import QRCode from "qrcode";
-import { logger } from "@src/core/utils/logger";
 
 export const generateQRPDF = async (ids: string[]) => {
   const locations = await prisma.location.findMany({
@@ -210,7 +188,6 @@ export const generateQRPDF = async (ids: string[]) => {
     // DESIGN CONSTANTS
     const PREMIUM_EMERALD = "#10B981";
     const SLATE_600 = "#475569";
-    const SLATE_400 = "#94A3B8";
 
     const headerH = 110;
     const qrContainerSize = 135;

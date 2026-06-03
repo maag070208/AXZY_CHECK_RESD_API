@@ -24,11 +24,7 @@ export const generateRoundPDFBuffer = async (
   round: any,
   timeline: any[],
 ): Promise<Buffer> => {
-  const clientName =
-    round.client?.name ||
-    round.recurringConfiguration?.client?.name ||
-    round.guard?.client?.name ||
-    "Sin Cliente";
+  const clientName = "Residencial";
 
   const doc = new PDFDocument({ margin: 0, size: "LETTER", bufferPages: true });
   const buffers: any[] = [];

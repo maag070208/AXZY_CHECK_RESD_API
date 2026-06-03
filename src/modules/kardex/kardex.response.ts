@@ -21,7 +21,6 @@ export interface IKardexResponse {
   location: {
     id: string;
     name: string;
-    clientId: string | null;
   };
   assignment?: {
     id: string;

@@ -6,7 +6,7 @@ import {
 import { getPrismaPaginationParams } from "@src/core/utils/prisma-pagination.utils";
 import { OPERATIONAL_ROLES, ROLE_CLIENT } from "@src/core/config/constants";
 import { IUserCreateRequest, IUserUpdateRequest } from "./user.dto";
-import { deleteClientDataCascade } from "../clients/clients.cascade";
+
 
 import { IUserResponse } from "./user.response";
 
@@ -33,10 +33,8 @@ export const getUsers = async (search?: string): Promise<IUserResponse[]> => {
       active: true,
       isLoggedIn: true,
       roleId: true,
-      clientId: true,
       scheduleId: true,
       role: { select: { id: true, name: true, value: true } },
-      client: { select: { id: true, name: true } },
       schedule: { select: { id: true, name: true, startTime: true, endTime: true } },
       assignmentLogs: {
         orderBy: { createdAt: "desc" },
@@ -54,9 +52,7 @@ export const getDataTableUsers = async (
 ): Promise<ITDataTableResponse<IUserResponse>> => {
   const prismaParams = getPrismaPaginationParams(params);
 
-  if (user?.role === ROLE_CLIENT && user.clientId) {
-    prismaParams.where.clientId = user.clientId;
-  }
+
 
   // If there's a name filter, convert it to a global OR search (name, lastName, username)
   if (prismaParams.where.name && typeof prismaParams.where.name === 'object' && prismaParams.where.name.contains) {
@@ -103,10 +99,8 @@ export const getDataTableUsers = async (
         active: true,
         isLoggedIn: true,
         roleId: true,
-        clientId: true,
         scheduleId: true,
         role: { select: { id: true, name: true, value: true } },
-        client: { select: { id: true, name: true } },
         schedule: { select: { id: true, name: true, startTime: true, endTime: true } },
         assignments: {
           where: { status: { not: 'REVIEWED' } },
@@ -139,10 +133,8 @@ export const getUserByUsername = async (username: string) => {
       password: true,
       active: true,
       roleId: true,
-      clientId: true,
       scheduleId: true,
       role: { select: { id: true, name: true, value: true } },
-      client: { select: { id: true, active: true, name: true } },
       schedule: { select: { id: true, startTime: true, endTime: true, name: true } },
       assignmentLogs: {
         orderBy: { createdAt: "desc" },
@@ -177,7 +169,7 @@ export const addUser = async (data: IUserCreateRequest) => {
       password: userData.password || "", // Prisma needs string
       roleId: targetRoleId!,
     } as any,
-    include: { schedule: true, role: true, client: true },
+    include: { schedule: true, role: true },
   });
 };
 
@@ -197,22 +189,12 @@ export const updateUser = async (id: string, data: IUserUpdateRequest) => {
   return prismaClient.$transaction(async (tx) => {
     const currentUser = await tx.user.findUnique({ where: { id } });
     
-    // Auto logging on clientId change
-    if (userData.clientId !== undefined && userData.clientId !== currentUser?.clientId) {
-        await tx.assignmentLog.create({
-            data: {
-                guardId: id,
-                clientId: (userData.clientId as string) || null,
-                type: userData.clientId ? "ASIGNADO" : "REMOVIDO",
-                notes: userData.clientId ? `Asignado a cliente` : "Removido de cliente",
-            }
-        });
-    }
+
 
     const updatedUser = await tx.user.update({
       where: { id },
       data: userData as any,
-      include: { schedule: true, role: true, client: true },
+      include: { schedule: true, role: true },
     });
 
     return updatedUser;
@@ -231,12 +213,10 @@ export const getUserById = async (id: string) => {
       username: true,
       password: true,
       active: true,
-      clientId: true,
       roleId: true,
       scheduleId: true,
       role: { select: { id: true, name: true, value: true } },
       schedule: { select: { id: true, name: true, startTime: true, endTime: true } },
-      client: { select: { id: true, name: true, active: true } },
     },
   });
 };
@@ -265,12 +245,7 @@ export const deleteUser = async (id: string) => {
       include: { role: true },
     });
 
-    if (user?.clientId && user.role?.name === ROLE_CLIENT) {
-      await deleteClientDataCascade(tx, user.clientId, id);
-      await tx.client.delete({
-        where: { id: user.clientId },
-      });
-    }
+
 
     return tx.user.delete({
       where: { id },

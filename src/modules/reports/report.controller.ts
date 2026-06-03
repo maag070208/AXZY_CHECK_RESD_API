@@ -8,7 +8,6 @@ export const getGuardStats = asyncHandler(async (req: Request, res: Response) =>
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
         guardId: req.query.guardId as string,
-        clientId: (user.clientId || req.query.clientId) as string,
         userRole: user.role
     };
     const result = await ReportService.getGuardGeneralStats(filters);
@@ -20,7 +19,6 @@ export const getTopPerformance = asyncHandler(async (req: Request, res: Response
     const filters = {
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
-        clientId: (user.clientId || req.query.clientId) as string,
         userRole: user.role
     };
     const result = await ReportService.getTopPerformanceGuards(filters);
@@ -33,7 +31,6 @@ export const getActivityDistribution = asyncHandler(async (req: Request, res: Re
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
         guardId: req.query.guardId as string,
-        clientId: (user.clientId || req.query.clientId) as string,
         userRole: user.role
     };
     const result = await ReportService.getActivityDistribution(filters);
@@ -46,7 +43,6 @@ export const getGuardDetailedReport = asyncHandler(async (req: Request, res: Res
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
         guardId: req.query.guardId as string,
-        clientId: (user.clientId || req.query.clientId) as string,
         userRole: user.role
     };
     const result = await ReportService.getGuardDetailedReport(filters);
@@ -59,7 +55,6 @@ export const getGuardDetailBreakdown = asyncHandler(async (req: Request, res: Re
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
         guardId: req.params.id as string,
-        clientId: (user.clientId || req.query.clientId) as string,
         userRole: user.role
     };
     const result = await ReportService.getGuardDetailBreakdown(filters);
@@ -71,7 +66,6 @@ export const getWorkloadComparison = asyncHandler(async (req: Request, res: Resp
     const filters = {
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
-        clientId: (user.clientId || req.query.clientId) as string,
         userRole: user.role
     };
     const result = await ReportService.getWorkloadComparison(filters);

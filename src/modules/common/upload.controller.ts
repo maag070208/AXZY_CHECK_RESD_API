@@ -25,10 +25,10 @@ export const uploadFile = asyncHandler(async (req: Request, res: Response) => {
   // Fetch full user data to get client and schedule names
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
-    include: { client: true, schedule: true },
+    include: { schedule: true },
   });
 
-  const clientName = dbUser?.client?.name || "Sin_Cliente";
+  const clientName = "CHECKAPP";
   const guardName = dbUser?.username || dbUser?.name || "Sin_Guardia";
   const scheduleName = dbUser?.schedule?.name || "Sin_Turno";
 

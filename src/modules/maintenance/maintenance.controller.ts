@@ -11,7 +11,7 @@ export const getDataTable = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const createMaintenance = asyncHandler(async (req: Request, res: Response) => {
-  const { title, category, description, media, latitude, longitude, categoryId, typeId, clientId } = req.body;
+  const { title, category, description, media, latitude, longitude, categoryId, typeId } = req.body;
   const guardId = res.locals.user?.id;
 
   if (!guardId) {
@@ -30,7 +30,6 @@ export const createMaintenance = asyncHandler(async (req: Request, res: Response
     media: mediaFiles.length > 0 ? mediaFiles : undefined,
     latitude: latitude ? Number(latitude) : undefined,
     longitude: longitude ? Number(longitude) : undefined,
-    clientId: clientId as string
   });
 
   await createAuditLog({
@@ -38,7 +37,7 @@ export const createMaintenance = asyncHandler(async (req: Request, res: Response
     module: "MAINTENANCE",
     action: "CREATE",
     resourceId: result.id,
-    details: { title, clientId }
+    details: { title }
   });
 
   return res.status(201).json(createTResult(result));

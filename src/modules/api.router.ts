@@ -2,7 +2,8 @@ import { Router } from "express";
 
 import assignmentsRoute from "./assignments/assignment.routes";
 import catalogRoute from "./catalog/catalog.routes";
-import clientsRoute from "./clients/clients.routes";
+import residentsRoute from "./residents/residents.routes";
+import contactsRoute from "./contacts/contacts.routes";
 import uploadRoute from "./common/upload.routes";
 import homeRoute from "./home/home.routes";
 import incidentRoute from "./incidents/incident.routes";
@@ -19,6 +20,14 @@ import settingsRoute from "./settings/settings.routes";
 import syncRoute from "./sync/sync.routes";
 import userRoute from "./users/user.routes";
 import zonesRoute from "./zones/zones.routes";
+import housesRoute from "./houses/houses.routes";
+import vehiclesRoute from "./vehicles/vehicles.routes";
+import visitorsRoute from "./visitors/visitors.routes";
+import accessesRoute from "./accesses/accesses.routes";
+import accessLogsRoute from "./access-logs/access-logs.routes";
+import complaintsRoute from "./complaints/complaints.routes";
+import paymentsRoute from "./payments/payments.routes";
+import notificationsRoute from "./notifications/notifications.routes";
 
 const apiRouter = Router();
 
@@ -35,11 +44,20 @@ apiRouter.use("/schedules", scheduleRoute);
 apiRouter.use("/maintenance", maintenanceRoute);
 apiRouter.use("/reports", reportRoute);
 apiRouter.use("/catalog", catalogRoute);
-apiRouter.use("/clients", clientsRoute);
+apiRouter.use("/residents", residentsRoute);
+apiRouter.use("/contacts", contactsRoute);
 apiRouter.use("/zones", zonesRoute);
 apiRouter.use("/recurring", recurringRoute);
 apiRouter.use("/settings", settingsRoute);
 apiRouter.use("/sync", syncRoute);
 apiRouter.use("/report-configurations", reportConfigurationsRoute);
+apiRouter.use("/houses", housesRoute);
+apiRouter.use("/vehicles", vehiclesRoute);
+apiRouter.use("/visitors", visitorsRoute);
+apiRouter.use("/accesses", accessesRoute);
+apiRouter.use("/access-logs", accessLogsRoute);
+apiRouter.use("/complaints", complaintsRoute);
+apiRouter.use("/payments", paymentsRoute);
+apiRouter.use("/notifications", notificationsRoute);
 
 export default apiRouter;

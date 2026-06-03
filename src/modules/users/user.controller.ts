@@ -12,11 +12,15 @@ import { asyncHandler } from "@src/core/utils/asyncHandler";
 import { AppError } from "@src/core/errors/AppError";
 import { createAuditLog } from "../audit/audit.service";
 
-
-export const getDataTable = asyncHandler(async (req: Request, res: Response) => {
-  const result = await userService.getDataTableUsers(req.body, res.locals.user);
-  return res.status(200).json(createTResult(result));
-});
+export const getDataTable = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await userService.getDataTableUsers(
+      req.body,
+      res.locals.user,
+    );
+    return res.status(200).json(createTResult(result));
+  },
+);
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { username, password } = req.body;
@@ -32,11 +36,10 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (!user.active) {
-    throw new AppError("Tu cuenta no está activa. Por favor contacta al administrador.", 403);
-  }
-
-  if (user.client && !user.client.active) {
-    throw new AppError("Tu empresa no está activa en el sistema. Por favor contacta al administrador.", 403);
+    throw new AppError(
+      "Tu cuenta no está activa. Por favor contacta al administrador.",
+      403,
+    );
   }
 
   // SHIFT CHECK
@@ -59,7 +62,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     lastName: user.lastName,
     username: user.username,
     role: user.role?.name,
-    clientId: user.clientId,
     shiftStart: user.schedule?.startTime,
     shiftEnd: user.schedule?.endTime,
   };
@@ -68,7 +70,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     userId: user.id,
     module: "AUTH",
     action: "LOGIN",
-    details: { username: user.username }
+    details: { username: user.username },
   });
 
   return res.status(200).json(createTResult(await generateJWT(tokenPayload)));
@@ -82,7 +84,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
     await createAuditLog({
       userId,
       module: "AUTH",
-      action: "LOGOUT"
+      action: "LOGOUT",
     });
   }
 
@@ -123,71 +125,80 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
     module: "USERS",
     action: "CREATE",
     resourceId: user.id,
-    details: { username: user.username, role: user.role?.name }
+    details: { username: user.username, role: user.role?.name },
   });
 
   return res.status(201).json(createTResult(user));
 });
 
-export const updateUserProfile = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { confirmPassword, ...data }: IUserUpdateRequest & { confirmPassword?: string } = req.body;
+export const updateUserProfile = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const {
+      confirmPassword,
+      ...data
+    }: IUserUpdateRequest & { confirmPassword?: string } = req.body;
 
-  if (data.username) {
-    const existing = await userService.getUserByUsername(data.username);
-    if (existing && existing.id !== id) {
-      throw new AppError("El nombre de usuario ya está registrado", 400);
+    if (data.username) {
+      const existing = await userService.getUserByUsername(data.username);
+      if (existing && existing.id !== id) {
+        throw new AppError("El nombre de usuario ya está registrado", 400);
+      }
     }
-  }
 
-  if (data.password) {
-    data.password = await hashPassword(data.password);
-  } else {
-    delete data.password;
-  }
+    if (data.password) {
+      data.password = await hashPassword(data.password);
+    } else {
+      delete data.password;
+    }
 
-  const updated = await userService.updateUser(id, data);
+    const updated = await userService.updateUser(id, data);
 
-  await createAuditLog({
-    userId: res.locals.user?.id || id,
-    module: "USERS",
-    action: "UPDATE",
-    resourceId: id,
-    details: data
-  });
+    await createAuditLog({
+      userId: res.locals.user?.id || id,
+      module: "USERS",
+      action: "UPDATE",
+      resourceId: id,
+      details: data,
+    });
 
-  return res.status(200).json(createTResult(updated));
-});
+    return res.status(200).json(createTResult(updated));
+  },
+);
 
-export const changePassword = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { oldPassword, newPassword } = req.body;
+export const changePassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { oldPassword, newPassword } = req.body;
 
-  const user = await userService.getUserById(id);
-  if (!user) {
-    throw new AppError("Usuario no encontrado", 404);
-  }
+    const user = await userService.getUserById(id);
+    if (!user) {
+      throw new AppError("Usuario no encontrado", 404);
+    }
 
-  const isValid = await comparePassword(oldPassword, user.password);
-  if (!isValid) {
-    throw new AppError("La contraseña actual es incorrecta", 400);
-  }
+    const isValid = await comparePassword(oldPassword, user.password);
+    if (!isValid) {
+      throw new AppError("La contraseña actual es incorrecta", 400);
+    }
 
-  const hashed = await hashPassword(newPassword);
-  await userService.updateUser(id, { password: hashed });
+    const hashed = await hashPassword(newPassword);
+    await userService.updateUser(id, { password: hashed });
 
-  return res.status(200).json(createTResult(true));
-});
+    return res.status(200).json(createTResult(true));
+  },
+);
 
-export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { newPassword } = req.body;
+export const resetPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { newPassword } = req.body;
 
-  const hashed = await hashPassword(newPassword);
-  await userService.updateUser(id, { password: hashed });
+    const hashed = await hashPassword(newPassword);
+    await userService.updateUser(id, { password: hashed });
 
-  return res.status(200).json(createTResult(true));
-});
+    return res.status(200).json(createTResult(true));
+  },
+);
 
 export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -197,7 +208,7 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
     userId: res.locals.user?.id || "SYSTEM",
     module: "USERS",
     action: "DELETE",
-    resourceId: id
+    resourceId: id,
   });
 
   return res.status(200).json(createTResult(true));

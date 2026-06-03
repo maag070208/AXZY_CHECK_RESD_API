@@ -13,13 +13,12 @@ export const getDataTable = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const startRound = asyncHandler(async (req: Request, res: Response) => {
-  const { guardId, clientId, recurringConfigurationId } = req.body;
+  const { guardId, recurringConfigurationId } = req.body;
   const user = res.locals.user;
   const targetGuardId = user?.id || guardId;
 
   const result = await roundService.startRound(
     String(targetGuardId),
-    clientId as string,
     recurringConfigurationId as string,
   );
   
@@ -32,7 +31,7 @@ export const startRound = asyncHandler(async (req: Request, res: Response) => {
     module: "ROUNDS",
     action: "START",
     resourceId: (result.data as any)?.id,
-    details: { clientId, recurringConfigurationId }
+    details: { recurringConfigurationId }
   });
 
   return res.status(200).json(result);

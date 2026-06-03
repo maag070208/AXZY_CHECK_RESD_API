@@ -3,7 +3,6 @@ import { z } from "zod";
 export const CreateLocationSchema = z.object({
   body: z.object({
     name: z.string().min(1, "El nombre no puede estar vacío"),
-    clientId: z.string().uuid("ID de cliente inválido"),
     zoneId: z.string().uuid("ID de zona inválido").optional(),
     reference: z.string().optional(),
     aisle: z.string().optional(),
@@ -15,7 +14,6 @@ export const CreateLocationSchema = z.object({
 export const UpdateLocationSchema = z.object({
   body: z.object({
     name: z.string().min(1, "El nombre no puede estar vacío").optional(),
-    clientId: z.string().uuid("ID de cliente inválido").optional(),
     zoneId: z.string().uuid("ID de zona inválido").optional().nullable(),
     reference: z.string().optional().nullable(),
     aisle: z.string().optional().nullable(),
@@ -41,8 +39,5 @@ export const PrintBulkQRSchema = z.object({
 });
 
 export const GetLocationsQuerySchema = z.object({
-  query: z.object({
-    clientId: z.string().uuid("ID de cliente inválido").optional(),
-  }),
+  query: z.object({}),
 });
-

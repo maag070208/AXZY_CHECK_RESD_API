@@ -13,7 +13,6 @@ export interface IUserCreateRequest {
   shiftStart?: string;
   shiftEnd?: string;
   scheduleId?: string | null;
-  clientId?: string | null;
 }
 
 export interface IUserUpdateRequest extends Partial<IUserCreateRequest> {

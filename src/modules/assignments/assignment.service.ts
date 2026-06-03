@@ -1,10 +1,15 @@
-
 import { prismaClient } from "@src/core/config/database";
 import { PrismaClient, AssignmentStatus } from "@prisma/client";
-import { ITDataTableFetchParams, ITDataTableResponse } from "@src/core/dto/datatable.dto";
+import {
+  ITDataTableFetchParams,
+  ITDataTableResponse,
+} from "@src/core/dto/datatable.dto";
 import { getPrismaPaginationParams } from "@src/core/utils/prisma-pagination.utils";
 import { now } from "@src/core/utils/date-time.utils";
-import { OPERATIONAL_ROLES, ASSIGNMENT_STATUS_PENDING } from "@src/core/config/constants";
+import {
+  OPERATIONAL_ROLES,
+  ASSIGNMENT_STATUS_PENDING,
+} from "@src/core/config/constants";
 import { CreateAssignmentSchema } from "./schemas/assignment.schema";
 
 import { AppError } from "@src/core/errors/AppError";
@@ -13,13 +18,15 @@ const prisma = prismaClient;
 
 import { IAssignmentResponse } from "./assignment.response";
 
-export const getDataTableAssignments = async (params: ITDataTableFetchParams): Promise<ITDataTableResponse<IAssignmentResponse>> => {
+export const getDataTableAssignments = async (
+  params: ITDataTableFetchParams,
+): Promise<ITDataTableResponse<IAssignmentResponse>> => {
   const prismaParams = getPrismaPaginationParams(params);
 
   // Map clientId to location relation
   if (prismaParams.where.clientId) {
     prismaParams.where.location = {
-      clientId: prismaParams.where.clientId
+      clientId: prismaParams.where.clientId,
     };
     delete prismaParams.where.clientId;
   }
@@ -39,11 +46,10 @@ export const getDataTableAssignments = async (params: ITDataTableFetchParams): P
           select: {
             id: true,
             name: true,
-            clientId: true
-          }
+          },
         },
         guard: {
-          select: { id: true, name: true, lastName: true }
+          select: { id: true, name: true, lastName: true },
         },
         tasks: {
           select: {
@@ -51,14 +57,14 @@ export const getDataTableAssignments = async (params: ITDataTableFetchParams): P
             description: true,
             reqPhoto: true,
             completed: true,
-            completedAt: true
-          }
+            completedAt: true,
+          },
         },
-      }
+      },
     }),
     prisma.assignment.count({
-      where: prismaParams.where
-    })
+      where: prismaParams.where,
+    }),
   ]);
 
   return { rows: rows as IAssignmentResponse[], total };
@@ -69,11 +75,14 @@ export const createAssignment = async (data: CreateAssignmentSchema) => {
   // Validate guard role
   const guard = await prisma.user.findUnique({
     where: { id: data.guardId },
-    include: { role: true }
+    include: { role: true },
   });
 
   if (!guard || !OPERATIONAL_ROLES.includes(guard.role.name)) {
-    throw new AppError(`Invalid guard ID or user is not a GUARD, SHIFT or MAINT. Guard: ${guard?.username}, Role: ${guard?.role?.name}`, 400);
+    throw new AppError(
+      `Invalid guard ID or user is not a GUARD, SHIFT or MAINT. Guard: ${guard?.username}, Role: ${guard?.role?.name}`,
+      400,
+    );
   }
 
   // Duplicate Check: Guard + Location + Active Status
@@ -93,7 +102,10 @@ export const createAssignment = async (data: CreateAssignmentSchema) => {
   });
 
   if (activeAssignment) {
-    throw new AppError("El guardia ya tiene una asignación activa para esta ubicación.", 400);
+    throw new AppError(
+      "El guardia ya tiene una asignación activa para esta ubicación.",
+      400,
+    );
   }
 
   return prisma.assignment.create({
@@ -103,12 +115,15 @@ export const createAssignment = async (data: CreateAssignmentSchema) => {
       assignedBy: data.assignedBy,
       notes: data.notes,
       status: ASSIGNMENT_STATUS_PENDING as AssignmentStatus,
-      tasks: data.tasks && data.tasks.length > 0 ? {
-        create: data.tasks.map((t) => ({
-          description: t.description,
-          reqPhoto: t.reqPhoto,
-        })),
-      } : undefined,
+      tasks:
+        data.tasks && data.tasks.length > 0
+          ? {
+              create: data.tasks.map((t) => ({
+                description: t.description,
+                reqPhoto: t.reqPhoto,
+              })),
+            }
+          : undefined,
     },
     include: {
       location: true,
@@ -123,11 +138,11 @@ export const createAssignment = async (data: CreateAssignmentSchema) => {
 // Get assignments for a specific guard (My Assignments)
 export const getAssignmentsByGuard = async (guardId: string) => {
   return prisma.assignment.findMany({
-    where: { 
+    where: {
       guardId,
       status: {
-        in: [AssignmentStatus.PENDING, AssignmentStatus.ANOMALY]
-      }
+        in: [AssignmentStatus.PENDING, AssignmentStatus.ANOMALY],
+      },
     },
     include: {
       location: true,
@@ -138,7 +153,11 @@ export const getAssignmentsByGuard = async (guardId: string) => {
 };
 
 // Get all assignments (filtering optional)
-export const getAllAssignments = async (filters: { guardId?: string; status?: AssignmentStatus; id?: string }) => {
+export const getAllAssignments = async (filters: {
+  guardId?: string;
+  status?: AssignmentStatus;
+  id?: string;
+}) => {
   const where: any = {};
   if (filters.id) where.id = filters.id;
   if (filters.guardId) where.guardId = filters.guardId;
@@ -147,40 +166,52 @@ export const getAllAssignments = async (filters: { guardId?: string; status?: As
   return prisma.assignment.findMany({
     where,
     include: {
-        location: true,
-        guard: { select: { id: true, name: true, lastName: true } },
-        tasks: true,
-        kardex: {
-          include: {
-            location: true,
-            user: { select: { id: true, name: true, lastName: true, username: true, role: true } },
-            assignment: true
-          }
-        }
+      location: true,
+      guard: { select: { id: true, name: true, lastName: true } },
+      tasks: true,
+      kardex: {
+        include: {
+          location: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              lastName: true,
+              username: true,
+              role: true,
+            },
+          },
+          assignment: true,
+        },
+      },
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: "desc" },
   });
 };
 
 // Update status
-export const updateAssignmentStatus = async (id: string, status: AssignmentStatus) => {
-    return prisma.assignment.update({
-        where: { id },
-        data: { status }
-    });
-}
+export const updateAssignmentStatus = async (
+  id: string,
+  status: AssignmentStatus,
+) => {
+  return prisma.assignment.update({
+    where: { id },
+    data: { status },
+  });
+};
 
 // Toggle task completion
 export const toggleAssignmentTask = async (taskId: string) => {
-    const task = await prisma.assignmentTask.findUnique({ where: { id: taskId } });
-    if (!task) throw new Error("Task not found");
+  const task = await prisma.assignmentTask.findUnique({
+    where: { id: taskId },
+  });
+  if (!task) throw new Error("Task not found");
 
-    return prisma.assignmentTask.update({
-        where: { id: taskId },
-        data: { 
-            completed: !task.completed,
-            completedAt: !task.completed ? now() : null
-        }
-    });
-}
-
+  return prisma.assignmentTask.update({
+    where: { id: taskId },
+    data: {
+      completed: !task.completed,
+      completedAt: !task.completed ? now() : null,
+    },
+  });
+};

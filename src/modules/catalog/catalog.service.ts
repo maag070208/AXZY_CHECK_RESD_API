@@ -1,5 +1,5 @@
-import { prismaClient } from "@src/core/config/database";
 import { ROLE_GUARD } from "@src/core/config/constants";
+import { prismaClient } from "@src/core/config/database";
 import { logger } from "@src/core/utils/logger";
 
 export enum CatalogKey {
@@ -26,13 +26,6 @@ export const getCatalog = async (key: string) => {
         return prismaClient.incidentType.findMany({
           select: { ...selectFields, categoryId: true },
         });
-      case CatalogKey.CLIENT:
-        const clients = await prismaClient.client.findMany({
-          where: { softDelete: false, active: true },
-          select: { id: true, name: true },
-          orderBy: { name: "asc" },
-        });
-        return clients.map((c) => ({ id: c.id, name: c.name, value: c.name }));
       case CatalogKey.LOCATION:
         const locations = await prismaClient.location.findMany({
           where: { softDelete: false, active: true },

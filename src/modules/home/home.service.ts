@@ -4,7 +4,6 @@ import {
   ROUND_STATUS_IN_PROGRESS,
   INCIDENT_STATUS_PENDING,
   MAINTENANCE_STATUS_PENDING,
-  ROLE_CLIENT,
 } from "@src/core/config/constants";
 import { IDashboardStats } from "./home.dto";
 
@@ -12,11 +11,6 @@ export const getDashboardStats = async (
   user: any,
 ): Promise<TResult<IDashboardStats>> => {
   try {
-    const where: { clientId?: string } = {};
-    if (user.role === ROLE_CLIENT && user.clientId) {
-      where.clientId = user.clientId;
-    }
-
     const [
       activeRounds,
       activeRoundsList,
@@ -24,22 +18,21 @@ export const getDashboardStats = async (
       pendingMaintenance,
     ] = await Promise.all([
       prisma.round.count({
-        where: { ...where, status: ROUND_STATUS_IN_PROGRESS },
+        where: { status: ROUND_STATUS_IN_PROGRESS },
       }),
       prisma.round.findMany({
-        where: { ...where, status: ROUND_STATUS_IN_PROGRESS },
+        where: { status: ROUND_STATUS_IN_PROGRESS },
         include: {
           guard: { select: { name: true, lastName: true } },
-          client: { select: { name: true } },
         },
         orderBy: { startTime: "desc" },
         take: 5,
       }),
       prisma.incident.count({
-        where: { ...where, status: INCIDENT_STATUS_PENDING },
+        where: { status: INCIDENT_STATUS_PENDING },
       }),
       prisma.maintenance.count({
-        where: { ...where, status: MAINTENANCE_STATUS_PENDING },
+        where: { status: MAINTENANCE_STATUS_PENDING },
       }),
     ]);
 
@@ -47,7 +40,7 @@ export const getDashboardStats = async (
       success: true,
       data: {
         activeRoundsCount: activeRounds,
-        activeRounds: activeRoundsList,
+        activeRounds: activeRoundsList as any[],
         pendingIncidentsCount: pendingIncidents,
         pendingMaintenanceCount: pendingMaintenance,
       },

@@ -10,20 +10,19 @@ export const getDataTable = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const getLocations = asyncHandler(async (req: Request, res: Response) => {
-  const { clientId } = req.query;
-  const locations = await locationsService.getAllLocations(clientId as string);
+  const locations = await locationsService.getAllLocations();
   return res.status(200).json(createTResult(locations));
 });
 
 export const addLocation = asyncHandler(async (req: Request, res: Response) => {
-  const { clientId, name, zoneId, aisle, spot, number } = req.body;
+  const { name, zoneId, aisle, spot, number, reference } = req.body;
   
   const locationData = { 
-      clientId: clientId, 
       zoneId: zoneId || undefined,
       aisle: aisle || '', 
       spot: spot || '', 
       number: number || '', 
+      reference: reference || '',
       name 
   };
 
@@ -33,15 +32,15 @@ export const addLocation = asyncHandler(async (req: Request, res: Response) => {
 
 export const putLocation = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { clientId, zoneId, aisle, spot, number, name, active } = req.body;
+  const { zoneId, aisle, spot, number, name, reference, active } = req.body;
   
   const location = await locationsService.updateLocation(id, { 
-      clientId: clientId || undefined, 
       zoneId: zoneId || undefined,
       aisle, 
       spot, 
       number, 
       name,
+      reference,
       active
   });
   return res.status(200).json(createTResult(location));
