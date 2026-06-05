@@ -5,16 +5,16 @@ FROM node:20-bullseye AS builder
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
 COPY swagger.yaml ./
 
-RUN yarn install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 RUN npx prisma generate
 
 COPY . .
-RUN yarn build
+RUN pnpm build
 
 
 # =========================

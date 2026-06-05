@@ -403,41 +403,46 @@ export const deletePayment = async (id: string) => {
   });
 };
 
-export const getPaymentSummary = async (residentId?: string) => {
-  const wherePending: any = { status: "PENDING", deletedAt: null };
+export const getPaymentSummary = async (residentId?: string, from?: string, to?: string) => {
+  const currentPeriod = dayjs().format("YYYY-MM");
+
   const wherePaid: any = { status: "PAID", deletedAt: null };
+  const wherePending: any = { status: "PENDING", deletedAt: null, period: currentPeriod };
+  const whereOverdue: any = { status: "PENDING", deletedAt: null, period: { lt: currentPeriod } };
+
   if (residentId) {
-    wherePending.residentId = residentId;
     wherePaid.residentId = residentId;
+    wherePending.residentId = residentId;
+    whereOverdue.residentId = residentId;
   }
 
-  const currentPeriod = dayjs().format("YYYY-MM");
-  wherePending.OR = [
-    { period: null },
-    { period: { lte: currentPeriod } },
-  ];
+  if (from || to) {
+    if (from) {
+      wherePaid.createdAt = { ...wherePaid.createdAt, gte: new Date(from) };
+    }
+    if (to) {
+      wherePaid.createdAt = { ...wherePaid.createdAt, lte: new Date(to) };
+    }
+  }
 
-  const [pendingPayments, paidPayments] = await Promise.all([
-    prisma.payment.aggregate({
-      where: wherePending,
-      _sum: { amount: true },
-      _count: true,
-    }),
-    prisma.payment.aggregate({
-      where: wherePaid,
-      _sum: { amount: true },
-      _count: true,
-    }),
+  const [paidPayments, pendingPayments, overduePayments] = await Promise.all([
+    prisma.payment.aggregate({ where: wherePaid, _sum: { amount: true }, _count: true }),
+    prisma.payment.aggregate({ where: wherePending, _sum: { amount: true }, _count: true }),
+    prisma.payment.aggregate({ where: whereOverdue, _sum: { amount: true }, _count: true }),
   ]);
 
   return {
+    paid: {
+      total: paidPayments._sum.amount || 0,
+      count: paidPayments._count || 0,
+    },
     pending: {
       total: pendingPayments._sum.amount || 0,
       count: pendingPayments._count || 0,
     },
-    paid: {
-      total: paidPayments._sum.amount || 0,
-      count: paidPayments._count || 0,
+    overdue: {
+      total: overduePayments._sum.amount || 0,
+      count: overduePayments._count || 0,
     },
   };
 };

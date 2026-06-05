@@ -12,7 +12,7 @@ import {
   CreateFeeSchema, UpdateFeeSchema, FeeIdParamSchema,
   CreatePaymentSchema, UpdatePaymentSchema, PaymentIdParamSchema,
   CreateResidentFeeSchema, BulkAssignResidentFeeSchema, BulkUnassignResidentFeeSchema,
-  ResidentFeeIdParamSchema, ResidentFeesQuerySchema,
+  ResidentFeeIdParamSchema, ResidentFeesQuerySchema, PaymentSummaryQuerySchema,
 } from "./schemas/payments.schema";
 import { DataTableFetchParamsSchema } from "../../core/dto/datatable.schema";
 
@@ -37,7 +37,7 @@ router.post("/resident-fees/bulk-unassign", validate(BulkUnassignResidentFeeSche
 router.delete("/resident-fees/:id", validate(ResidentFeeIdParamSchema), removeResidentFee);
 
 // Payments
-router.get("/summary", getSummary);
+router.get("/summary", validate(PaymentSummaryQuerySchema), getSummary);
 router.post("/datatable", validate(DataTableFetchParamsSchema), getDataTable);
 router.post("/", validate(CreatePaymentSchema), addPayment);
 router.get("/receipt/:id/download", downloadReceipt);

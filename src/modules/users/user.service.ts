@@ -81,10 +81,22 @@ export const getDataTableUsers = async (
       prismaParams.where.role = { name: roleName };
   }
 
-  // Enforce excluding client role
+  // Enforce excluding client role while preserving any existing role name filter
+  const existingRoleName =
+    prismaParams.where.role && typeof prismaParams.where.role === "object"
+      ? prismaParams.where.role.name
+      : undefined;
+  const nameFilter: any = { not: ROLE_CLIENT };
+  if (existingRoleName && typeof existingRoleName === "object") {
+    nameFilter.equals = existingRoleName.equals;
+    nameFilter.contains = existingRoleName.contains;
+    nameFilter.in = existingRoleName.in;
+  } else if (typeof existingRoleName === "string") {
+    nameFilter.equals = existingRoleName;
+  }
   prismaParams.where = {
     ...prismaParams.where,
-    role: { ...prismaParams.where.role, name: { ...prismaParams.where.role?.name, not: ROLE_CLIENT } }
+    role: { ...(typeof prismaParams.where.role === "object" ? prismaParams.where.role : {}), name: nameFilter },
   };
 
   const [rows, total] = await Promise.all([

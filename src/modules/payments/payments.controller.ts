@@ -38,7 +38,7 @@ export const removeFee = asyncHandler(async (req: Request, res: Response) => {
 });
 
 // ---- Payments ----
-export const getSummary = asyncHandler(async (_req: Request, res: Response) => {
+export const getSummary = asyncHandler(async (req: Request, res: Response) => {
   let residentId: string | undefined;
   if (res.locals.user?.role === "RESDN") {
     const resident = await prisma.resident.findFirst({
@@ -46,7 +46,8 @@ export const getSummary = asyncHandler(async (_req: Request, res: Response) => {
     });
     residentId = resident?.id;
   }
-  return res.status(200).json(createTResult(await paymentsService.getPaymentSummary(residentId)));
+  const { from, to } = req.query as { from?: string; to?: string };
+  return res.status(200).json(createTResult(await paymentsService.getPaymentSummary(residentId, from, to)));
 });
 
 export const getDataTable = asyncHandler(async (req: Request, res: Response) => {

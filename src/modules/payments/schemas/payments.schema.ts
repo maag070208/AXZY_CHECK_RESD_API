@@ -90,6 +90,13 @@ export const ResidentFeesQuerySchema = z.object({
   }),
 });
 
+export const PaymentSummaryQuerySchema = z.object({
+  query: z.object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+  }),
+});
+
 export const BulkUnassignResidentFeeSchema = z.object({
   body: z.object({
     residentIds: z.array(z.string().uuid("ID de residente inválido")),
