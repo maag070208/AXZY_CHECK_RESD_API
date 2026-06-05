@@ -1,10 +1,10 @@
-FROM node:22-slim AS deps
+FROM --platform=linux/amd64 node:22-bookworm-slim AS deps
 RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 WORKDIR /app
 COPY pnpm-lock.yaml package.json ./
 RUN pnpm install --frozen-lockfile
 
-FROM node:22-slim AS builder
+FROM --platform=linux/amd64 node:22-bookworm-slim AS builder
 RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -12,7 +12,8 @@ COPY . .
 RUN npx prisma generate
 RUN pnpm build
 
-FROM node:22-slim AS runner
+FROM --platform=linux/amd64 node:22-bookworm-slim AS runner
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
