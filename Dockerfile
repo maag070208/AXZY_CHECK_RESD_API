@@ -1,35 +1,23 @@
-# =========================
-# Builder
-# =========================
-FROM node:20-bullseye AS builder
-
+FROM node:20-alpine AS builder
+RUN corepack enable
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
+COPY pnpm-lock.yaml package.json ./
+RUN pnpm fetch
+
 COPY prisma ./prisma
-COPY swagger.yaml ./
+COPY swagger.yaml tsconfig.json ./
+COPY src ./src
 
-RUN pnpm install
-
+RUN pnpm install --offline
 RUN npx prisma generate
-
-COPY . .
 RUN pnpm build
 
-
-# =========================
-# Runtime
-# =========================
-FROM node:20-bullseye
-
+FROM node:20-alpine
 WORKDIR /app
-
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/swagger.yaml ./
+COPY --from=builder /app/package.json /app/swagger.yaml ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/assets ./src/assets
-
 EXPOSE 4321
-
 CMD ["node", "dist/src/index.js"]
