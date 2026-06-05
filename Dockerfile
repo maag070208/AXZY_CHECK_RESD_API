@@ -3,13 +3,12 @@ RUN corepack enable
 WORKDIR /app
 
 COPY pnpm-lock.yaml package.json ./
-RUN pnpm fetch
+RUN pnpm install --frozen-lockfile
 
 COPY prisma ./prisma
 COPY swagger.yaml tsconfig.json ./
 COPY src ./src
 
-RUN pnpm install --offline
 RUN npx prisma generate
 RUN pnpm build
 
