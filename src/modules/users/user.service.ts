@@ -187,15 +187,18 @@ export const updateUser = async (id: string, data: IUserUpdateRequest) => {
   if (userData.roleId === null) delete userData.roleId;
 
   return prismaClient.$transaction(async (tx) => {
-    const currentUser = await tx.user.findUnique({ where: { id } });
-    
-
-
     const updatedUser = await tx.user.update({
       where: { id },
       data: userData as any,
       include: { schedule: true, role: true },
     });
+
+    if (userData.active === false) {
+      await tx.resident.updateMany({
+        where: { userId: id, deletedAt: null, active: true },
+        data: { active: false },
+      });
+    }
 
     return updatedUser;
   });
@@ -240,16 +243,17 @@ export const getLoggedInGuards = async (excludeUserId: string) => {
 
 export const deleteUser = async (id: string) => {
   return prismaClient.$transaction(async (tx) => {
-    const user = await tx.user.findUnique({
+    const user = await tx.user.update({
       where: { id },
-      include: { role: true },
+      data: { active: false, deletedAt: new Date() },
     });
 
-
-
-    return tx.user.delete({
-      where: { id },
+    await tx.resident.updateMany({
+      where: { userId: id, deletedAt: null, active: true },
+      data: { active: false },
     });
+
+    return user;
   });
 };
 

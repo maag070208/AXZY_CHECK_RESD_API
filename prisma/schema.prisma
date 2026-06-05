@@ -307,7 +307,7 @@ model Fee {
   description String?
   amount      Decimal
   type        FeeType   @default(ONE_TIME)
-  dueDate     DateTime
+  dueDate     DateTime?
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -372,8 +372,10 @@ model Payment {
   amount     Decimal
   reference  String?
   status     PaymentStatus @default(PENDING)
+  period     String?
   stripeInvoiceId       String?
   stripePaymentIntentId String?
+  s3ReceiptUrl          String?
   paidAt     DateTime?
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
@@ -382,6 +384,12 @@ model Payment {
   resident    Resident     @relation(fields: [residentId], references: [id])
   fee         Fee          @relation(fields: [feeId], references: [id])
   paymentLogs PaymentLog[]
+
+  @@index([residentId, status])
+  @@index([feeId])
+  @@index([period])
+  @@index([deletedAt])
+  @@index([status, period, deletedAt])
 }
 
 model PaymentLog {
@@ -397,6 +405,9 @@ model PaymentLog {
 
   payment  Payment? @relation(fields: [paymentId], references: [id])
   resident Resident @relation(fields: [residentId], references: [id])
+
+  @@index([paymentId])
+  @@index([residentId])
 }
 
 model Notification {

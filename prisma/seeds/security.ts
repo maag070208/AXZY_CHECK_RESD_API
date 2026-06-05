@@ -25,9 +25,9 @@ export const securitySeed = async (prisma: PrismaClient) => {
   // ── ADMINS ──────────────────────────────────────────────────────────────
   hackerLog.info("AUTH", "Deploying Admin accounts");
   for (const u of [
-    { username: "admin",  name: "Admin",   lastName: "Principal" },
-    { username: "isabel", name: "Isabel",  lastName: "Ramirez"   },
-    { username: "sofia",  name: "Sofia",   lastName: "Torres"    },
+    { username: "admin",     name: "Alejandro", lastName: "Mendoza López"      },
+    { username: "isabel",    name: "Isabel",    lastName: "Ramírez García"      },
+    { username: "sofia",     name: "Sofía",     lastName: "Torres Navarro"      },
   ]) {
     await prisma.user.upsert({
       where: { username: u.username },
@@ -39,12 +39,12 @@ export const securitySeed = async (prisma: PrismaClient) => {
   // ── GUARDS ───────────────────────────────────────────────────────────────
   hackerLog.info("AUTH", "Deploying Guard infrastructure");
   const guardUsers = [
-    { username: "victor",  name: "Victor",  lastName: "Hernandez",  scheduleId: matutino?.id  },
-    { username: "martin",  name: "Martin",  lastName: "Lopez",       scheduleId: matutino?.id  },
-    { username: "marco",   name: "Marco",   lastName: "Solis",       scheduleId: vespertino?.id },
-    { username: "asael",   name: "Asael",   lastName: "Morales",     scheduleId: nocturno?.id  },
-    { username: "carlos",  name: "Carlos",  lastName: "Ruiz",        scheduleId: vespertino?.id },
-    { username: "ernesto", name: "Ernesto", lastName: "Vega",        scheduleId: nocturno?.id  },
+    { username: "victor",  name: "Víctor",     lastName: "Hernández Cruz",     scheduleId: matutino?.id  },
+    { username: "martin",  name: "Martín",     lastName: "López García",       scheduleId: matutino?.id  },
+    { username: "marco",   name: "Marco",      lastName: "Solis Aguilar",      scheduleId: vespertino?.id },
+    { username: "asael",   name: "Asael",      lastName: "Morales Rivera",     scheduleId: nocturno?.id  },
+    { username: "carlos",  name: "Carlos",     lastName: "Ruiz Fernández",     scheduleId: vespertino?.id },
+    { username: "ernesto", name: "Ernesto",    lastName: "Vega Pacheco",       scheduleId: nocturno?.id  },
   ];
 
   for (const u of guardUsers) {
@@ -61,8 +61,8 @@ export const securitySeed = async (prisma: PrismaClient) => {
   // ── SHIFT CHIEFS ─────────────────────────────────────────────────────────
   hackerLog.info("AUTH", "Deploying Shift Chiefs");
   for (const u of [
-    { username: "ricardo",  name: "Ricardo",  lastName: "Mendoza",  scheduleId: vespertino?.id },
-    { username: "gonzalo",  name: "Gonzalo",  lastName: "Fuentes",  scheduleId: matutino?.id  },
+    { username: "ricardo",  name: "Ricardo",  lastName: "Mendoza Ríos",      scheduleId: vespertino?.id },
+    { username: "gonzalo",  name: "Gonzalo",  lastName: "Fuentes Silva",     scheduleId: matutino?.id  },
   ]) {
     await prisma.user.upsert({
       where: { username: u.username },
@@ -74,8 +74,8 @@ export const securitySeed = async (prisma: PrismaClient) => {
   // ── MAINTENANCE ───────────────────────────────────────────────────────────
   hackerLog.info("AUTH", "Deploying Maintenance personnel");
   for (const u of [
-    { username: "mario",    name: "Mario",    lastName: "Garcia"   },
-    { username: "jesus",    name: "Jesus",    lastName: "Pacheco"  },
+    { username: "mario",    name: "Mario",    lastName: "García Sandoval"    },
+    { username: "jesus",    name: "Jesús",    lastName: "Pacheco Hernández"  },
   ]) {
     await prisma.user.upsert({
       where: { username: u.username },
@@ -87,26 +87,26 @@ export const securitySeed = async (prisma: PrismaClient) => {
   // ── RESIDENT USERS (RESDN) ────────────────────────────────────────────────
   hackerLog.info("AUTH", "Deploying Resident user accounts");
   const residentUsers = [
-    { username: "juan.garcia",    name: "Juan",    lastName: "Garcia"    },
-    { username: "maria.lopez",    name: "Maria",   lastName: "Lopez"     },
-    { username: "pedro.martinez", name: "Pedro",   lastName: "Martinez"  },
-    { username: "ana.torres",     name: "Ana",     lastName: "Torres"    },
-    { username: "carlos.reyes",   name: "Carlos",  lastName: "Reyes"     },
-    { username: "lucia.flores",   name: "Lucia",   lastName: "Flores"    },
-    { username: "roberto.ruiz",   name: "Roberto", lastName: "Ruiz"      },
-    { username: "patricia.jimenez", name: "Patricia", lastName: "Jimenez" },
-    { username: "miguel.sanchez",  name: "Miguel",  lastName: "Sanchez"  },
-    { username: "elena.morales",   name: "Elena",   lastName: "Morales"  },
-    { username: "oscar.medina",    name: "Oscar",   lastName: "Medina"   },
-    { username: "rosa.vega",       name: "Rosa",    lastName: "Vega"     },
-    { username: "andres.castro",   name: "Andres",  lastName: "Castro"   },
-    { username: "laura.vargas",    name: "Laura",   lastName: "Vargas"   },
-    { username: "fernando.romero", name: "Fernando", lastName: "Romero"  },
-    { username: "gabriela.luna",   name: "Gabriela", lastName: "Luna"    },
-    { username: "hugo.perez",      name: "Hugo",    lastName: "Perez"    },
-    { username: "diana.chavez",    name: "Diana",   lastName: "Chavez"   },
-    { username: "raul.gutierrez",  name: "Raul",    lastName: "Gutierrez" },
-    { username: "carmen.ortiz",    name: "Carmen",  lastName: "Ortiz"    },
+    { username: "juan.garcia",    name: "Juan Carlos",    lastName: "García Hernández"    },
+    { username: "maria.lopez",    name: "María Elena",    lastName: "López Rodríguez"      },
+    { username: "pedro.martinez", name: "Pedro Antonio",  lastName: "Martínez Morales"     },
+    { username: "ana.torres",     name: "Ana Sofía",      lastName: "Torres Jiménez"       },
+    { username: "carlos.reyes",   name: "Carlos Alberto", lastName: "Reyes Mendoza"        },
+    { username: "lucia.flores",   name: "Lucía Fernanda", lastName: "Flores Vázquez"       },
+    { username: "roberto.ruiz",   name: "Roberto",        lastName: "Ruiz Delgado"         },
+    { username: "patricia.jimenez", name: "Patricia",     lastName: "Jiménez Cruz"         },
+    { username: "miguel.sanchez",  name: "Miguel Ángel",  lastName: "Sánchez Ríos"         },
+    { username: "elena.morales",   name: "Elena",         lastName: "Morales Aguilar"      },
+    { username: "oscar.medina",    name: "Óscar",         lastName: "Medina Paredes"       },
+    { username: "rosa.vega",       name: "Rosa María",    lastName: "Vega Contreras"       },
+    { username: "andres.castro",   name: "Andrés",        lastName: "Castro Núñez"         },
+    { username: "laura.vargas",    name: "Laura",         lastName: "Vargas Salazar"       },
+    { username: "fernando.romero", name: "Fernando",      lastName: "Romero Guerrero"      },
+    { username: "gabriela.luna",   name: "Gabriela",      lastName: "Luna Espinoza"        },
+    { username: "hugo.perez",      name: "Hugo",          lastName: "Pérez Castillo"       },
+    { username: "diana.chavez",    name: "Diana",         lastName: "Chávez Blanco"        },
+    { username: "raul.gutierrez",  name: "Raúl",          lastName: "Gutiérrez Soto"       },
+    { username: "carmen.ortiz",    name: "María del Carmen", lastName: "Ortiz Domínguez"   },
   ];
 
   for (const u of residentUsers) {

@@ -8,41 +8,50 @@ export const vehiclesSeed = async (prisma: PrismaClient) => {
   if (houses.length === 0) { hackerLog.error("VEHICLES", "No occupied houses found"); return; }
 
   const makes = [
-    { brand: "Toyota",    model: "Corolla",   color: "Blanco"  },
-    { brand: "Nissan",    model: "Versa",     color: "Plata"   },
-    { brand: "Chevrolet", model: "Aveo",      color: "Rojo"    },
-    { brand: "Honda",     model: "Civic",     color: "Negro"   },
-    { brand: "Volkswagen",model: "Jetta",     color: "Gris"    },
-    { brand: "Ford",      model: "Fusion",    color: "Azul"    },
-    { brand: "Hyundai",   model: "Tucson",    color: "Blanco"  },
-    { brand: "Kia",       model: "Sportage",  color: "Plata"   },
-    { brand: "Toyota",    model: "Hilux",     color: "Negro"   },
-    { brand: "Nissan",    model: "X-Trail",   color: "Gris"    },
+    { brand: "Toyota",    model: "Corolla",    color: "Blanco"   },
+    { brand: "Nissan",    model: "Versa",      color: "Gris"     },
+    { brand: "Chevrolet", model: "Aveo",       color: "Rojo"     },
+    { brand: "Honda",     model: "Civic",      color: "Negro"    },
+    { brand: "Volkswagen",model: "Jetta",      color: "Azul Marino" },
+    { brand: "Mazda",     model: "Mazda 3",    color: "Plata"    },
+    { brand: "Kia",       model: "Rio",        color: "Blanco"   },
+    { brand: "Hyundai",   model: "Accent",     color: "Gris Oscuro" },
+    { brand: "Toyota",    model: "Hilux",      color: "Negro"    },
+    { brand: "Nissan",    model: "NP300",      color: "Blanco"   },
+    { brand: "Suzuki",    model: "Swift",      color: "Rojo"     },
+    { brand: "Ford",      model: "Ranger",     color: "Gris"     },
+    { brand: "Chevrolet", model: "Silverado",  color: "Blanco"   },
+    { brand: "Mitsubishi",model: "L200",       color: "Verde"    },
+    { brand: "Jeep",      model: "Cherokee",   color: "Negro"    },
   ];
 
-  let plateNum = 1000;
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   for (let i = 0; i < houses.length; i++) {
     const house = houses[i];
-    const numVehicles = (i % 3 === 0) ? 2 : 1; // some houses have 2
+    const numVehicles = (i % 3 === 0) ? 2 : 1;
 
     for (let v = 0; v < numVehicles; v++) {
       const make = makes[(i + v) % makes.length];
-      const plate = `ABC${String(plateNum++).padStart(4, "0")}`;
+      const l1 = letters[Math.floor(Math.random() * 26)];
+      const l2 = letters[Math.floor(Math.random() * 26)];
+      const l3 = letters[Math.floor(Math.random() * 26)];
+      const nums = String(100 + Math.floor(Math.random() * 900));
+      const state = Math.random() > 0.5 ? "BC" : "SON";
+      const plate = `${l1}${l2}${l3}-${nums}-${state}`;
 
-      const existing = await prisma.vehicle.findUnique({ where: { plate } });
-      if (!existing) {
-        await prisma.vehicle.create({
-          data: {
-            houseId: house.id,
-            plate,
-            brand: make.brand,
-            model: make.model,
-            color: make.color,
-            active: true,
-          },
-        });
-      }
+      await prisma.vehicle.create({
+        data: {
+          houseId: house.id,
+          plate,
+          brand: make.brand,
+          model: make.model,
+          color: make.color,
+          active: true,
+        },
+      }).catch(() => {
+        // plate collision, skip
+      });
     }
   }
 

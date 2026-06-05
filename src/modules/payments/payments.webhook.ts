@@ -3,6 +3,8 @@ import { stripeService } from "./stripe.service";
 import { logger } from "@src/core/utils/logger";
 import { prismaClient } from "@src/core/config/database";
 import { handleRecurringPayment } from "./payments.service";
+import { sendPaymentSuccessEmail } from "@src/core/utils/emailSender";
+import { generateAndUploadReceipt } from "./payments.receipt.service";
 import Stripe from "stripe";
 
 export const handleStripeWebhook = async (req: Request, res: Response) => {
@@ -61,7 +63,7 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
           if (paymentId) {
             const payment = await prismaClient.payment.findUnique({
               where: { id: paymentId },
-              select: { id: true, status: true, residentId: true, feeId: true, amount: true },
+              select: { id: true, status: true, residentId: true, feeId: true, amount: true, period: true, createdAt: true, fee: { select: { name: true } } },
             });
 
             if (payment && payment.status !== "PAID") {
@@ -88,11 +90,35 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                 });
 
                 if (payment.feeId) {
-                  await handleRecurringPayment(tx, payment.residentId, payment.feeId);
+                  await handleRecurringPayment(tx, payment.residentId, payment.feeId, payment.period);
                 }
               });
 
               logger.info(`Payment ${paymentId} completed via Stripe (PI: ${paymentIntentId})`);
+
+              prismaClient.resident.findUnique({
+                where: { id: payment.residentId },
+                select: { id: true, email: true, phone: true, user: { select: { name: true, lastName: true } } },
+              }).then(async (residentFull) => {
+                if (residentFull) {
+                  sendPaymentSuccessEmail(
+                    { amount: payment.amount, fee: null },
+                    { ...residentFull, name: residentFull.user?.name },
+                  );
+
+                  const receiptUrl = await generateAndUploadReceipt(
+                    { ...payment, stripePaymentIntentId: paymentIntentId, paidAt: new Date() },
+                    residentFull,
+                  );
+                  if (receiptUrl) {
+                    await prismaClient.payment.update({
+                      where: { id: paymentId },
+                      data: { s3ReceiptUrl: receiptUrl },
+                    });
+                    logger.info(`Receipt PDF uploaded for payment ${paymentId}: ${receiptUrl}`);
+                  }
+                }
+              }).catch((err) => logger.error("Error processing post-payment tasks:", err));
             }
           }
         }

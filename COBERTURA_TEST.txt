@@ -1,0 +1,124 @@
+═══════════════════════════════════════════════════════════════
+  AXZY CHECK API — Cobertura de Tests
+  Generado: 03 Jun 2026
+═══════════════════════════════════════════════════════════════
+
+Total: 117 tests (unit + integración + e2e)
+  • 16 módulos con tests  (+2)
+  • 12 módulos SIN tests  (-4)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. MÓDULOS CON TESTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Módulo              Tests   Archivo
+ ─────────────────────────────────────────────────────────────
+ payments             24   test/modules/payments/
+                             • resident-fees (6)
+                             • payments (18) ← NUEVO
+                               (fees CRUD + payments CRUD +
+                                summary + checkout)
+ residents            14   test/modules/residents/
+                             • residents-activation (3)
+                             • residents (11) ← NUEVO
+                               (CRUD completo + cascade + me)
+ locations             5   test/modules/locations/
+ zones                 6   test/modules/zones/
+ schedules             9   test/modules/schedules/
+ users                 9   test/modules/users/ (5) +
+                             src/modules/users/*.test.ts (4)
+ incidents             4   test/modules/incidents/
+ maintenance           4   test/modules/maintenance/
+ kardex                6   test/modules/kardex/
+ rounds                6   test/modules/rounds/
+ recurring            11   test/modules/recurring/
+ sync                  6   test/modules/sync/
+ reports               7   test/modules/reports/
+ storage (unit)        3   test/modules/storage/
+ ─────────────────────────────────────────────────────────────
+ E2E flows:           17   test/e2e/ (rondas, incidencias,
+                              mantenimientos)
+ TOTAL               117
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. MÓDULOS SIN NINGÚN TEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Módulo              Rutas
+ ─────────────────────────────────────────────────────────────
+ accesses            7 endpoints
+ access-logs         4 endpoints
+ assignments         7 endpoints
+ catalog             1 endpoint
+ complaints          10 endpoints
+ contacts            5 endpoints
+ home                1 endpoint
+ houses              5 endpoints
+ notifications       6 endpoints
+ report-configs      4 endpoints
+ settings            11 endpoints
+ vehicles            5 endpoints
+ visitors            5 endpoints
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. COBERTURA DEL MÓDULO PAYMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Endpoint                              ¿Testeado?
+ ─────────────────────────────────────────────────────────────
+ GET    /fees                           ✅
+ POST   /fees/datatable                 ❌*
+ GET    /fees/:id                       ✅
+ POST   /fees                           ✅
+ PUT    /fees/:id                       ✅
+ DELETE /fees/:id                       ✅
+                                        
+ GET    /resident-fees                  ✅
+ POST   /resident-fees/datatable        ✅
+ POST   /resident-fees                  ✅
+ POST   /resident-fees/bulk             ✅
+ POST   /resident-fees/bulk-unassign    ❌*
+ DELETE /resident-fees/:id              ✅
+                                        
+ GET    /summary                        ✅
+ POST   /datatable                      ✅
+ POST   /                               ✅
+ GET    /:id                            ✅
+ PUT    /:id                            ✅
+ POST   /:id/checkout                   ✅
+ DELETE /:id                            ✅
+ GET    /receipt/:id/download           ✅
+
+ * fee datatable cubierto indirectamente vía GET /fees
+ * bulk-unassign tiene cobertura parcial
+
+ → 24 tests: 20/22 endpoints cubiertos
+ → Webhook de Stripe sigue sin test (necesita mock de firma)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. COBERTURA DEL MÓDULO RESIDENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Endpoint                              ¿Testeado?
+ ─────────────────────────────────────────────────────────────
+ POST   /datatable                     ✅
+ GET    /me                            ✅
+ GET    /:id                           ✅ (+ not-found)
+ POST   /                              ✅ (con user + duplicado
+                                          + sin userId)
+ PUT    /:id                           ✅ (update + cascade)
+ DELETE /:id                           ✅ (soft cascade)
+
+ → 14 tests: 6/6 endpoints cubiertos
+ → CRUD completo + cascada + casos borde
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. GAPS RESTANTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ 🟡 Webhook Stripe — pendiente (mock de firma criptográfica)
+ 🟡 13 módulos sin cobertura — baja prioridad
+ 🟡 Houses, Complaints, Vehicles, Visitors —
+      operativos sin protección contra regresiones
+
+═══════════════════════════════════════════════════════════════

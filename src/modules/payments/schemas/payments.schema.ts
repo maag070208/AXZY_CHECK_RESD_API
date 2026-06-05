@@ -10,9 +10,12 @@ export const CreateFeeSchema = z.object({
     description: z.string().optional(),
     amount: z.number({ message: "Monto requerido" }),
     type: z.enum(FEE_TYPES).optional().default("ONE_TIME"),
-    dueDate: z.string({ message: "Fecha de vencimiento requerida" }),
+    dueDate: z.string().optional(),
     active: z.boolean().optional().default(true),
-  }),
+  }).refine(
+    (data) => data.type === "MONTHLY" || (data.type === "ONE_TIME" && !!data.dueDate),
+    { message: "Fecha de vencimiento requerida para cargos únicos", path: ["dueDate"] }
+  ),
 });
 
 export const UpdateFeeSchema = z.object({
@@ -40,6 +43,7 @@ export const CreatePaymentSchema = z.object({
     reference: z.string().optional(),
     status: z.enum(PAYMENT_STATUSES, { message: "Estado inválido" }).optional(),
     paidAt: z.string().optional(),
+    period: z.string().optional(),
   }),
 });
 
@@ -49,6 +53,7 @@ export const UpdatePaymentSchema = z.object({
     reference: z.string().optional(),
     paidAt: z.string().optional(),
     softDelete: z.boolean().optional(),
+    period: z.string().optional(),
   }),
   params: z.object({ id: z.string().uuid("ID de pago inválido") }),
 });
@@ -81,5 +86,13 @@ export const ResidentFeeIdParamSchema = z.object({
 export const ResidentFeesQuerySchema = z.object({
   query: z.object({
     residentId: z.string().uuid("ID de residente inválido").optional(),
+    feeId: z.string().uuid("ID de cuota inválido").optional(),
+  }),
+});
+
+export const BulkUnassignResidentFeeSchema = z.object({
+  body: z.object({
+    residentIds: z.array(z.string().uuid("ID de residente inválido")),
+    feeId: z.string().uuid("ID de cuota inválido"),
   }),
 });

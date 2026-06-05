@@ -2,7 +2,8 @@ export interface IFeeCreateRequest {
   name: string;
   description?: string;
   amount: number;
-  dueDate: string;
+  type?: "ONE_TIME" | "MONTHLY";
+  dueDate?: string;
   active?: boolean;
 }
 
@@ -22,6 +23,7 @@ export interface IPaymentCreateRequest {
   reference?: string;
   status?: string;
   paidAt?: string;
+  period?: string;
 }
 
 export interface IPaymentUpdateRequest {
@@ -29,4 +31,5 @@ export interface IPaymentUpdateRequest {
   reference?: string;
   paidAt?: string;
   softDelete?: boolean;
+  period?: string;
 }

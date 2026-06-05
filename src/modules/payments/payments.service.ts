@@ -6,6 +6,7 @@ import {
 } from "@src/core/dto/datatable.dto";
 import { env } from "@src/core/config/env.config";
 import { stripeService } from "./stripe.service";
+import { generateReceiptFromPaymentData } from "./payments.receipt.service";
 import dayjs from "dayjs";
 
 const feeSelect = {
@@ -13,6 +14,7 @@ const feeSelect = {
   name: true,
   description: true,
   amount: true,
+  type: true,
   dueDate: true,
   active: true,
   createdAt: true,
@@ -20,104 +22,34 @@ const feeSelect = {
   deletedAt: true,
 };
 
-const getNextPeriodNameAndDueDate = (name: string, dueDate: Date): { nextName: string; nextDueDate: Date } => {
-  const spanishMonths = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-  ];
-  
-  for (let i = 0; i < spanishMonths.length; i++) {
-    const month = spanishMonths[i];
-    const regex = new RegExp(`\\b${month}\\b`, "i");
-    if (regex.test(name)) {
-      const yearRegex = /\b(20\d{2})\b/;
-      const matchYear = name.match(yearRegex);
-      let year = matchYear ? parseInt(matchYear[1]) : dayjs(dueDate).year();
-      
-      let nextMonthIdx = i + 1;
-      let nextYear = year;
-      if (nextMonthIdx >= 12) {
-        nextMonthIdx = 0;
-        nextYear += 1;
-      }
-      
-      const nextMonthName = spanishMonths[nextMonthIdx];
-      let nextName = name.replace(regex, nextMonthName);
-      if (matchYear) {
-        nextName = nextName.replace(yearRegex, String(nextYear));
-      }
-      
-      const nextDueDate = dayjs(dueDate).add(1, "month").toDate();
-      return { nextName, nextDueDate };
-    }
-  }
-
-  const numRegex = /(mes[\s:-]+)?(\d+)/i;
-  const matchNum = name.match(numRegex);
-  if (matchNum) {
-    const currentNum = parseInt(matchNum[2]);
-    const nextNum = currentNum + 1;
-    const digitIndex = matchNum.index! + (matchNum[1] ? matchNum[1].length : 0);
-    const nextName = name.substring(0, digitIndex) + nextNum + name.substring(digitIndex + matchNum[2].length);
-    const nextDueDate = dayjs(dueDate).add(1, "month").toDate();
-    return { nextName, nextDueDate };
-  }
-
-  // 3. Fallback: append next month name and year based on the next due date
-  const nextDate = dayjs(dueDate).add(1, "month");
-  const nextMonthName = spanishMonths[nextDate.month()];
-  const nextYear = nextDate.year();
-  return { nextName: `${name} - ${nextMonthName} ${nextYear}`, nextDueDate: nextDate.toDate() };
+const getNextPeriod = (currentPeriod?: string | null): string => {
+  const date = currentPeriod ? dayjs(currentPeriod, "YYYY-MM") : dayjs();
+  return date.add(1, "month").format("YYYY-MM");
 };
 
-export const handleRecurringPayment = async (tx: any, residentId: string, feeId: string) => {
+export const handleRecurringPayment = async (tx: any, residentId: string, feeId: string, currentPeriod?: string | null) => {
   const currentFee = await tx.fee.findUnique({
     where: { id: feeId },
+    select: { type: true, amount: true },
   });
   if (!currentFee || currentFee.type !== "MONTHLY") return;
 
-  const { nextName, nextDueDate } = getNextPeriodNameAndDueDate(currentFee.name, currentFee.dueDate);
+  const nextPeriod = getNextPeriod(currentPeriod);
 
-  // Find or create next Fee definition
-  let nextFee = await tx.fee.findFirst({
-    where: {
-      name: nextName,
-      active: true,
-      deletedAt: null,
-    },
+  const existing = await tx.payment.findFirst({
+    where: { residentId, feeId, period: nextPeriod, deletedAt: null },
   });
 
-  if (!nextFee) {
-    nextFee = await tx.fee.create({
-      data: {
-        name: nextName,
-        description: currentFee.description,
-        amount: currentFee.amount,
-        type: "MONTHLY",
-        dueDate: nextDueDate,
-        active: true,
-      },
-    });
-  }
-
-  // Check if resident already has payment for next fee
-  const existingNextPayment = await tx.payment.findFirst({
-    where: {
-      residentId,
-      feeId: nextFee.id,
-      deletedAt: null,
-    },
-  });
-
-  if (!existingNextPayment) {
+  if (!existing) {
     const p = await tx.payment.create({
       data: {
         residentId,
-        feeId: nextFee.id,
+        feeId,
         amount: currentFee.amount,
         status: "PENDING",
+        period: nextPeriod,
       },
-      select: { id: true, amount: true, status: true },
+      select: { id: true, amount: true, status: true, period: true },
     });
 
     await tx.paymentLog.create({
@@ -127,7 +59,7 @@ export const handleRecurringPayment = async (tx: any, residentId: string, feeId:
         action: "CREATE",
         statusTo: "PENDING",
         amount: p.amount,
-        notes: "Autogenerado por pago de período anterior",
+        notes: `Autogenerado - Período ${nextPeriod}`,
       },
     });
   }
@@ -140,18 +72,52 @@ const paymentSelect = {
   amount: true,
   reference: true,
   status: true,
+  period: true,
   paidAt: true,
   createdAt: true,
   updatedAt: true,
   deletedAt: true,
+  stripePaymentIntentId: true,
+  stripeInvoiceId: true,
+  s3ReceiptUrl: true,
   resident: {
     select: {
       id: true,
+      email: true,
       phone: true,
       user: { select: { id: true, name: true, lastName: true } },
     },
   },
-  fee: { select: { id: true, name: true, amount: true } },
+  fee: { select: { id: true, name: true, amount: true, type: true, dueDate: true } },
+  paymentLogs: {
+    take: 5,
+    orderBy: { createdAt: "desc" as const },
+    select: { action: true, statusFrom: true, statusTo: true, notes: true, createdAt: true },
+  },
+};
+
+const paymentListSelect = {
+  id: true,
+  residentId: true,
+  feeId: true,
+  amount: true,
+  reference: true,
+  status: true,
+  period: true,
+  paidAt: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  stripePaymentIntentId: true,
+  resident: {
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      user: { select: { id: true, name: true, lastName: true } },
+    },
+  },
+  fee: { select: { id: true, name: true, amount: true, type: true, dueDate: true } },
 };
 
 // ---- Fees ----
@@ -174,7 +140,8 @@ export const createFee = async (data: {
   name: string;
   description?: string;
   amount: number;
-  dueDate: string;
+  type?: "ONE_TIME" | "MONTHLY";
+  dueDate?: string;
   active?: boolean;
 }) => {
   return prisma.fee.create({
@@ -182,7 +149,8 @@ export const createFee = async (data: {
       name: data.name,
       description: data.description || null,
       amount: data.amount,
-      dueDate: new Date(data.dueDate),
+      type: data.type ?? "ONE_TIME",
+      ...(data.dueDate ? { dueDate: new Date(data.dueDate) } : {}),
       active: data.active ?? true,
     },
     select: feeSelect,
@@ -258,11 +226,27 @@ export const getDataTablePayments = async (
   const residentId = (filters as any)?.residentId;
   const feeId = (filters as any)?.feeId;
   const status = (filters as any)?.status;
+  const dateFrom = (filters as any)?.dateFrom;
+  const dateTo = (filters as any)?.dateTo;
+  const search = (filters as any)?.search;
 
   const where: any = { deletedAt: null };
   if (residentId) where.residentId = residentId;
   if (feeId) where.feeId = feeId;
   if (status) where.status = status as PaymentStatus;
+  if (dateFrom || dateTo) {
+    where.period = {};
+    if (dateFrom) where.period.gte = dayjs(dateFrom).format("YYYY-MM");
+    if (dateTo) where.period.lte = dayjs(dateTo).format("YYYY-MM");
+  }
+  if (search) {
+    where.OR = [
+      { id: { contains: search, mode: "insensitive" } },
+      { resident: { user: { name: { contains: search, mode: "insensitive" } } } },
+      { resident: { user: { lastName: { contains: search, mode: "insensitive" } } } },
+      { fee: { name: { contains: search, mode: "insensitive" } } },
+    ];
+  }
 
   const [rows, total] = await Promise.all([
     prisma.payment.findMany({
@@ -270,7 +254,7 @@ export const getDataTablePayments = async (
       skip: (page - 1) * limit,
       take: limit,
       orderBy: { createdAt: "desc" },
-      select: paymentSelect,
+      select: paymentListSelect,
     }),
     prisma.payment.count({ where }),
   ]);
@@ -285,6 +269,31 @@ export const getPaymentById = async (id: string) => {
   });
 };
 
+export const getReceiptPDF = async (id: string): Promise<Buffer | null> => {
+  const payment = await prisma.payment.findFirst({
+    where: { id, deletedAt: null },
+    select: {
+      id: true,
+      amount: true,
+      status: true,
+      paidAt: true,
+      createdAt: true,
+      stripePaymentIntentId: true,
+      residentId: true,
+      fee: { select: { name: true } },
+      resident: {
+        select: {
+          phone: true,
+          email: true,
+          user: { select: { name: true, lastName: true } },
+        },
+      },
+    },
+  });
+  if (!payment) return null;
+  return generateReceiptFromPaymentData(payment, payment.resident);
+};
+
 export const createPayment = async (data: {
   residentId: string;
   feeId: string;
@@ -292,8 +301,16 @@ export const createPayment = async (data: {
   reference?: string;
   status?: PaymentStatus;
   paidAt?: string;
+  period?: string;
 }) => {
   const payment = await prisma.$transaction(async (tx) => {
+    const fee = await tx.fee.findUnique({
+      where: { id: data.feeId },
+      select: { type: true },
+    });
+
+    const period = data.period || (fee?.type === "MONTHLY" ? dayjs().format("YYYY-MM") : null);
+
     const p = await tx.payment.create({
       data: {
         residentId: data.residentId,
@@ -301,6 +318,7 @@ export const createPayment = async (data: {
         amount: data.amount,
         reference: data.reference || null,
         status: (data.status as PaymentStatus) || PaymentStatus.PENDING,
+        period,
         paidAt: data.paidAt ? new Date(data.paidAt) : null,
       },
       select: paymentSelect,
@@ -317,7 +335,7 @@ export const createPayment = async (data: {
     });
 
     if (p.status === PaymentStatus.PAID) {
-      await handleRecurringPayment(tx, data.residentId, data.feeId);
+      await handleRecurringPayment(tx, data.residentId, data.feeId, period);
     }
 
     return p;
@@ -338,7 +356,7 @@ export const updatePayment = async (
   return prisma.$transaction(async (tx) => {
     const existing = await tx.payment.findUnique({
       where: { id },
-      select: { status: true, residentId: true, amount: true, feeId: true },
+      select: { status: true, residentId: true, amount: true, feeId: true, period: true },
     });
 
     const updateData: any = {};
@@ -369,7 +387,7 @@ export const updatePayment = async (
       });
 
       if (data.status === PaymentStatus.PAID) {
-        await handleRecurringPayment(tx, existing.residentId, existing.feeId);
+        await handleRecurringPayment(tx, existing.residentId, existing.feeId, existing.period);
       }
     }
 
@@ -393,17 +411,24 @@ export const getPaymentSummary = async (residentId?: string) => {
     wherePaid.residentId = residentId;
   }
 
-  const pendingPayments = await prisma.payment.aggregate({
-    where: wherePending,
-    _sum: { amount: true },
-    _count: true,
-  });
+  const currentPeriod = dayjs().format("YYYY-MM");
+  wherePending.OR = [
+    { period: null },
+    { period: { lte: currentPeriod } },
+  ];
 
-  const paidPayments = await prisma.payment.aggregate({
-    where: wherePaid,
-    _sum: { amount: true },
-    _count: true,
-  });
+  const [pendingPayments, paidPayments] = await Promise.all([
+    prisma.payment.aggregate({
+      where: wherePending,
+      _sum: { amount: true },
+      _count: true,
+    }),
+    prisma.payment.aggregate({
+      where: wherePaid,
+      _sum: { amount: true },
+      _count: true,
+    }),
+  ]);
 
   return {
     pending: {
@@ -418,7 +443,7 @@ export const getPaymentSummary = async (residentId?: string) => {
 };
 
 export const checkoutPayment = async (paymentId: string) => {
-  const successUrl = `${env.SYSTEM_URL || "http://localhost:12345"}/#/payments?payment=success`;
+  const successUrl = `${env.SYSTEM_URL || "http://localhost:12345"}/#/payments/receipt/${paymentId}`;
   const cancelUrl = `${env.SYSTEM_URL || "http://localhost:12345"}/#/payments?payment=cancel`;
 
   const session = await stripeService.createPaymentCheckout(
@@ -427,29 +452,6 @@ export const checkoutPayment = async (paymentId: string) => {
     cancelUrl,
   );
 
-  return { url: session.url };
-};
-
-// ---- Stripe Subscriptions ----
-export const getAllPlans = async () => {
-  return prisma.subscriptionPlan.findMany({
-    where: { active: true, deletedAt: null },
-    orderBy: { amount: "asc" },
-  });
-};
-
-export const checkoutSubscription = async (
-  residentId: string,
-  planId: string,
-) => {
-  const successUrl = `${process.env.SYSTEM_URL || "http://localhost:12345"}/#/payments?checkout=success`;
-  const cancelUrl = `${process.env.SYSTEM_URL || "http://localhost:12345"}/#/payments?checkout=cancelled`;
-  const session = await stripeService.createSubscriptionCheckout(
-    residentId,
-    planId,
-    successUrl,
-    cancelUrl,
-  );
   return { url: session.url };
 };
 
@@ -474,9 +476,10 @@ const residentFeeSelect = {
   fee: { select: { id: true, name: true, amount: true, type: true, dueDate: true } },
 };
 
-export const getResidentFees = async (residentId?: string) => {
+export const getResidentFees = async (residentId?: string, feeId?: string) => {
   const where: any = { deletedAt: null, active: true };
   if (residentId) where.residentId = residentId;
+  if (feeId) where.feeId = feeId;
   return prisma.residentFee.findMany({
     where,
     select: residentFeeSelect,
@@ -567,14 +570,16 @@ export const createResidentFee = async (data: {
         },
       });
       if (!existingPayment) {
+        const period = dayjs().format("YYYY-MM");
         const p = await tx.payment.create({
           data: {
             residentId: data.residentId,
             feeId: data.feeId,
             amount: fee.amount,
             status: "PENDING",
+            period,
           },
-          select: { id: true, amount: true, status: true },
+          select: { id: true, amount: true, status: true, period: true },
         });
         await tx.paymentLog.create({
           data: {
@@ -583,7 +588,7 @@ export const createResidentFee = async (data: {
             action: "CREATE",
             statusTo: "PENDING",
             amount: p.amount,
-            notes: "Autogenerado por asignación de cuota",
+            notes: `Autogenerado - Período ${period}`,
           },
         });
       }
@@ -616,4 +621,21 @@ export const deleteResidentFee = async (id: string) => {
     data: { deletedAt: new Date(), active: false },
     select: residentFeeSelect,
   });
+};
+
+export const bulkUnassignResidentFees = async (data: {
+  residentIds: string[];
+  feeId: string;
+}) => {
+  const results: any[] = [];
+  for (const residentId of data.residentIds) {
+    const r = await prisma.residentFee.findFirst({
+      where: { residentId: residentId, feeId: data.feeId, deletedAt: null, active: true },
+    });
+    if (r) {
+      const result = await deleteResidentFee(r.id);
+      results.push(result);
+    }
+  }
+  return results;
 };

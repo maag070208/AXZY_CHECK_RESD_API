@@ -2,15 +2,17 @@ import { Router } from "express";
 import {
   getFees, getFeeById, addFee, putFee, removeFee, getDataTableFees,
   getDataTable, getPaymentById, addPayment, putPayment, removePayment,
-  getPlans, checkoutSubscription, checkoutPayment, getSummary,
-  getResidentFees, getDataTableResidentFees, addResidentFee, bulkAssignResidentFees, removeResidentFee,
+  checkoutPayment, getSummary,
+  getResidentFees, getDataTableResidentFees, addResidentFee, bulkAssignResidentFees, bulkUnassignResidentFees, removeResidentFee,
+  downloadReceipt,
 } from "./payments.controller";
 import { authenticate } from "../common/middlewares/auth.middleware";
 import { validate } from "../../core/middlewares/validate.middleware";
 import {
   CreateFeeSchema, UpdateFeeSchema, FeeIdParamSchema,
   CreatePaymentSchema, UpdatePaymentSchema, PaymentIdParamSchema,
-  CreateResidentFeeSchema, BulkAssignResidentFeeSchema, ResidentFeeIdParamSchema, ResidentFeesQuerySchema,
+  CreateResidentFeeSchema, BulkAssignResidentFeeSchema, BulkUnassignResidentFeeSchema,
+  ResidentFeeIdParamSchema, ResidentFeesQuerySchema,
 } from "./schemas/payments.schema";
 import { DataTableFetchParamsSchema } from "../../core/dto/datatable.schema";
 
@@ -31,16 +33,14 @@ router.get("/resident-fees", validate(ResidentFeesQuerySchema), getResidentFees)
 router.post("/resident-fees/datatable", validate(DataTableFetchParamsSchema), getDataTableResidentFees);
 router.post("/resident-fees", validate(CreateResidentFeeSchema), addResidentFee);
 router.post("/resident-fees/bulk", validate(BulkAssignResidentFeeSchema), bulkAssignResidentFees);
+router.post("/resident-fees/bulk-unassign", validate(BulkUnassignResidentFeeSchema), bulkUnassignResidentFees);
 router.delete("/resident-fees/:id", validate(ResidentFeeIdParamSchema), removeResidentFee);
-
-// Stripe Subscriptions
-router.get("/subscriptions/plans", getPlans);
-router.post("/subscriptions/checkout", checkoutSubscription);
 
 // Payments
 router.get("/summary", getSummary);
 router.post("/datatable", validate(DataTableFetchParamsSchema), getDataTable);
 router.post("/", validate(CreatePaymentSchema), addPayment);
+router.get("/receipt/:id/download", downloadReceipt);
 router.get("/:id", validate(PaymentIdParamSchema), getPaymentById);
 router.put("/:id", validate(UpdatePaymentSchema), putPayment);
 router.post("/:id/checkout", validate(PaymentIdParamSchema), checkoutPayment);

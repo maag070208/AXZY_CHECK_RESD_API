@@ -23,7 +23,12 @@ describe("Rutas de Cuotas Asignadas (Integración)", () => {
   let createdResidentFeeId: string;
   const uniqueSuffix = Date.now();
 
+  let resdnRoleId: string;
+
   beforeAll(async () => {
+    const resdnRole = await prismaClient.role.findUniqueOrThrow({ where: { name: "RESDN" } });
+    resdnRoleId = resdnRole.id;
+
     // Crear Fee
     const fee = await prismaClient.fee.create({
       data: {
@@ -52,7 +57,7 @@ describe("Rutas de Cuotas Asignadas (Integración)", () => {
         lastName: "Test",
         username: `residente_rf_${uniqueSuffix}`,
         password: hashSync("test123", 10),
-        role: "RESDN",
+        roleId: resdnRoleId,
       },
     });
     createdUserId = user.id;

@@ -248,6 +248,85 @@ export const sendIncidentWhatsApp = async (incident: any, guard: any) => {
   }
 };
 
+export const sendPaymentSuccessEmail = async (payment: any, resident: any) => {
+  try {
+    const recipientEmail = resident?.email || resident?.user?.email;
+    if (!recipientEmail) {
+      logger.warn(`No email for resident ${resident?.id}, skipping payment email`);
+      return;
+    }
+
+    const subject = `💰 Pago Confirmado: ${payment.fee?.name || "Cuota"}`;
+    const htmlContent = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #065911; padding: 20px; text-align: center;">
+          <h2 style="color: #ffffff; margin: 0; font-size: 24px;">💰 Pago Confirmado</h2>
+        </div>
+        
+        <div style="padding: 30px; background-color: #ffffff;">
+          <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+            Hola <strong>${resident?.user?.name || resident?.name || ""}</strong>, tu pago ha sido procesado exitosamente.
+          </p>
+          
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; width: 40%; font-weight: bold; color: #555;">Concepto:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #333;">${payment.fee?.name || "Cuota"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Monto:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #333; font-size: 18px; font-weight: bold;">$${Number(payment.amount).toFixed(2)} MXN</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Estado:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #333;">
+                <span style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">PAGADO</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Fecha:</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #333;">${new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</td>
+            </tr>
+          </table>
+
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+             <a href="${process.env.SYSTEM_URL || "http://localhost:12345"}/#/payments" style="background-color: #065911; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 5px; font-weight: bold;">Ver Mis Pagos</a>
+          </div>
+        </div>
+        
+        <div style="background-color: #fcfcfc; padding: 15px; text-align: center; border-top: 1px solid #e0e0e0;">
+          <p style="font-size: 12px; color: #999; margin: 0;">AXZY CHECK - Sistema de Administración Residencial</p>
+        </div>
+      </div>
+    `;
+
+    if (resend) {
+      const { data, error } = await resend.emails.send({
+        from: "AXZY Check <noreply@axzy.dev>",
+        to: [recipientEmail],
+        subject,
+        html: htmlContent,
+      });
+      if (error) {
+        logger.error("Resend Error (Payment):", error);
+      } else {
+        logger.info("Payment success email sent:", data);
+      }
+    } else {
+      await transporter.sendMail({
+        from: "aamaro@axzy.dev",
+        to: [recipientEmail],
+        subject,
+        html: htmlContent,
+      });
+    }
+
+    logger.info(`Payment success email sent to ${recipientEmail}`);
+  } catch (error) {
+    logger.error("Error sending payment success email:", error);
+  }
+};
+
 export const sendMaintenanceWhatsApp = async (maintenance: any, guard: any) => {
   try {
     const config = await prisma.sysConfig.findUnique({

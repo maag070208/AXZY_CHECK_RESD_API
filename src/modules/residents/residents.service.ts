@@ -182,8 +182,9 @@ export const updateResident = async (id: string, data: IResidentUpdateRequest) =
   return prisma.$transaction(async (tx) => {
     const oldResident = await tx.resident.findUnique({
       where: { id },
-      select: { houseId: true },
+      select: { houseId: true, userId: true },
     });
+    if (!oldResident) throw new Error("Residente no encontrado");
 
     const updateData: any = {};
     if (data.userId !== undefined) updateData.userId = data.userId;
@@ -207,6 +208,14 @@ export const updateResident = async (id: string, data: IResidentUpdateRequest) =
       select: residentSelect,
     });
 
+    const shouldDeactivate = data.active === false || data.softDelete === true;
+    if (shouldDeactivate && oldResident.userId) {
+      await tx.user.update({
+        where: { id: oldResident.userId },
+        data: { active: false },
+      });
+    }
+
     // Update new house occupancy
     await updateHouseOccupancy(tx, resident.houseId);
 
@@ -227,8 +236,15 @@ export const deleteResident = async (id: string) => {
         deletedAt: new Date(),
         active: false,
       },
-      select: residentSelect,
+      select: { ...residentSelect, userId: true },
     });
+
+    if (resident.userId) {
+      await tx.user.update({
+        where: { id: resident.userId },
+        data: { active: false },
+      });
+    }
 
     await updateHouseOccupancy(tx, resident.houseId);
 
