@@ -16,10 +16,12 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
   try {
     if (!signature) throw new Error("Missing stripe-signature header");
     if (!webhookSecret) {
-      // In development, if no secret is provided, we can either skip validation or error out.
-      // Usually it's better to bypass or use a dummy event for testing, but we'll try to parse it if we can.
-      logger.warn("No STRIPE_WEBHOOK_SECRET provided, skipping signature validation.");
-      event = req.body as any; 
+      if (process.env.NODE_ENV === "production") {
+        logger.error("Missing STRIPE_WEBHOOK_SECRET in production - rejecting");
+        return res.status(500).send("Webhook misconfigured");
+      }
+      logger.warn("No STRIPE_WEBHOOK_SECRET, skipping validation (dev only)");
+      event = req.body as any;
     } else {
       const rawBody = (req as any).rawBody;
       if (!rawBody) throw new Error("Missing rawBody");
