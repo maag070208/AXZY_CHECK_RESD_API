@@ -9,7 +9,7 @@ COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
 COPY swagger.yaml ./
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 RUN npx prisma generate
 
