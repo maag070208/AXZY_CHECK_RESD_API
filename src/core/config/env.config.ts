@@ -7,6 +7,7 @@ export const env = {
   APP_SECRET: process.env.APP_SECRET || 'secret',
   DATABASE_URL: process.env.DATABASE_URL,
   SYSTEM_URL: process.env.SYSTEM_URL,
+  FRONTEND_URL: process.env.FRONTEND_URL,
   AWS: {
     ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,

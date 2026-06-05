@@ -7,6 +7,10 @@ import {
 import { env } from "@src/core/config/env.config";
 import { stripeService } from "./stripe.service";
 import { generateReceiptFromPaymentData } from "./payments.receipt.service";
+import { AppError } from "@src/core/errors/AppError";
+import { logger } from "@src/core/utils/logger";
+import { sendPaymentSuccessEmail } from "@src/core/utils/emailSender";
+import { generateAndUploadReceipt } from "./payments.receipt.service";
 import dayjs from "dayjs";
 
 const feeSelect = {
@@ -448,8 +452,9 @@ export const getPaymentSummary = async (residentId?: string, from?: string, to?:
 };
 
 export const checkoutPayment = async (paymentId: string) => {
-  const successUrl = `${env.SYSTEM_URL || "http://localhost:12345"}/#/payments/receipt/${paymentId}`;
-  const cancelUrl = `${env.SYSTEM_URL || "http://localhost:12345"}/#/payments?payment=cancel`;
+  const baseUrl = env.SYSTEM_URL || env.FRONTEND_URL || "http://localhost:12345";
+  const successUrl = `${baseUrl}/#/payments/receipt/${paymentId}?session_id={CHECKOUT_SESSION_ID}`;
+  const cancelUrl = `${baseUrl}/#/payments?payment=cancel`;
 
   const session = await stripeService.createPaymentCheckout(
     paymentId,
@@ -457,7 +462,96 @@ export const checkoutPayment = async (paymentId: string) => {
     cancelUrl,
   );
 
-  return { url: session.url };
+  return { url: session.url, sessionId: session.id };
+};
+
+export const verifyPaymentSession = async (sessionId: string) => {
+  const session = await stripeService.retrieveCheckoutSession(sessionId);
+
+  if (!session) {
+    throw new AppError("Sesión de Stripe no encontrada", 404);
+  }
+
+  const paymentId = session.metadata?.paymentId;
+  if (!paymentId) {
+    throw new AppError("La sesión no tiene paymentId en metadata", 400);
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: { id: true, status: true, residentId: true, feeId: true, amount: true, period: true, createdAt: true, fee: { select: { name: true } } },
+  });
+
+  if (!payment) {
+    throw new AppError("Pago no encontrado", 404);
+  }
+
+  if (payment.status === "PAID") {
+    return await getPaymentById(paymentId);
+  }
+
+  if (session.payment_status !== "paid") {
+    return await getPaymentById(paymentId);
+  }
+
+  const paymentIntentId = typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : session.payment_intent?.id;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: "PAID",
+        stripePaymentIntentId: paymentIntentId,
+        paidAt: new Date(),
+      },
+    });
+
+    await tx.paymentLog.create({
+      data: {
+        paymentId,
+        residentId: payment.residentId,
+        action: "STATUS_CHANGE",
+        statusFrom: payment.status,
+        statusTo: "PAID",
+        amount: payment.amount,
+        notes: "Pagado vía Stripe (verificación manual desde sesión)",
+      },
+    });
+
+    if (payment.feeId) {
+      await handleRecurringPayment(tx, payment.residentId, payment.feeId, payment.period);
+    }
+  });
+
+  logger.info(`Payment ${paymentId} verified via session ${sessionId} (PI: ${paymentIntentId})`);
+
+  prisma.resident.findUnique({
+    where: { id: payment.residentId },
+    select: { id: true, email: true, phone: true, user: { select: { name: true, lastName: true } } },
+  }).then(async (residentFull) => {
+    if (residentFull) {
+      sendPaymentSuccessEmail(
+        { amount: payment.amount, fee: null },
+        { ...residentFull, name: residentFull.user?.name },
+      );
+
+      const receiptUrl = await generateAndUploadReceipt(
+        { ...payment, stripePaymentIntentId: paymentIntentId ?? null, paidAt: new Date() },
+        residentFull,
+      );
+      if (receiptUrl) {
+        await prisma.payment.update({
+          where: { id: paymentId },
+          data: { s3ReceiptUrl: receiptUrl },
+        });
+        logger.info(`Receipt PDF uploaded for payment ${paymentId}: ${receiptUrl}`);
+      }
+    }
+  }).catch((err) => logger.error("Error processing post-payment tasks:", err));
+
+  return await getPaymentById(paymentId);
 };
 
 // ---- Resident Fees (Assignments) ----

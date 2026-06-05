@@ -1584,7 +1584,8 @@ paths:
         - payments
       summary: 'Obtener cuotas asignadas a residentes'
       parameters:
-        - in: query
+        -
+          in: query
           name: residentId
           required: false
           schema:
@@ -1656,7 +1657,8 @@ paths:
         - payments
       summary: 'Desasignar cuota de residente'
       parameters:
-        - in: path
+        -
+          in: path
           name: id
           required: true
           schema:
@@ -8832,6 +8834,7 @@ components:
         dueDate:
           type: string
           format: date-time
+          nullable: true
         active:
           type: boolean
         createdAt:
@@ -8862,6 +8865,7 @@ components:
         dueDate:
           type: string
           format: date-time
+          nullable: true
         active:
           type: boolean
         createdAt:
@@ -8951,6 +8955,9 @@ components:
         reference:
           type: string
           nullable: true
+        period:
+          type: string
+          nullable: true
         stripeInvoiceId:
           type: string
           format: uuid
@@ -8958,6 +8965,9 @@ components:
         stripePaymentIntentId:
           type: string
           format: uuid
+          nullable: true
+        s3ReceiptUrl:
+          type: string
           nullable: true
         paidAt:
           type: string
@@ -8992,6 +9002,9 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/PaymentStatus'
+        period:
+          type: string
+          nullable: true
         stripeInvoiceId:
           type: string
           format: uuid
@@ -8999,6 +9012,9 @@ components:
         stripePaymentIntentId:
           type: string
           format: uuid
+          nullable: true
+        s3ReceiptUrl:
+          type: string
           nullable: true
         paidAt:
           type: string
@@ -9410,15 +9426,15 @@ components:
         residentId:
           type: string
           format: uuid
-          description: ID del residente
+          description: 'ID del residente'
         feeId:
           type: string
           format: uuid
-          description: ID de la cuota
+          description: 'ID de la cuota'
         startDate:
           type: string
           format: date-time
-          description: Fecha de inicio (opcional)
+          description: 'Fecha de inicio (opcional)'
     ResidentFeeBulkCreate:
       type: object
       properties:
@@ -9427,15 +9443,15 @@ components:
           items:
             type: string
             format: uuid
-          description: Lista de IDs de residentes
+          description: 'Lista de IDs de residentes'
         feeId:
           type: string
           format: uuid
-          description: ID de la cuota
+          description: 'ID de la cuota'
         startDate:
           type: string
           format: date-time
-          description: Fecha de inicio (opcional)
+          description: 'Fecha de inicio (opcional)'
     TResultListResidentFeeBasic:
       type: object
       properties:

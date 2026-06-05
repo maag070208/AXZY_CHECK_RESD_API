@@ -21,6 +21,7 @@ jest.mock("@src/modules/payments/stripe.service", () => ({
       url: "https://checkout.stripe.com/mock",
     }),
     getOrCreateCustomer: jest.fn().mockResolvedValue("cus_mock"),
+    retrieveCheckoutSession: jest.fn(),
   },
 }));
 
@@ -274,6 +275,83 @@ describe("Payments — Payments CRUD + Summary", () => {
       .set("user", JSON.stringify(adminUser));
 
     expect(res.status).toBe(404);
+  });
+
+  it("POST /api/v1/payments/session/:sessionId/verify — sesión no encontrada en Stripe", async () => {
+    const { stripeService } = require("@src/modules/payments/stripe.service");
+    stripeService.retrieveCheckoutSession.mockResolvedValueOnce(null);
+
+    const res = await request(app)
+      .post(`/api/v1/payments/session/cs_invalid/verify`)
+      .set("user", JSON.stringify(adminUser))
+      .send({});
+
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+  });
+
+  it("POST /api/v1/payments/session/:sessionId/verify — sesión pagada actualiza pago a PAID", async () => {
+    const freshPayment = await prisma.payment.create({
+      data: {
+        residentId, feeId, amount: 999, status: "PENDING",
+        reference: "VERIFY-TEST", period: "2026-08",
+      },
+    });
+
+    const { stripeService } = require("@src/modules/payments/stripe.service");
+    stripeService.retrieveCheckoutSession.mockResolvedValueOnce({
+      id: "cs_test_paid",
+      payment_status: "paid",
+      payment_intent: "pi_test_123",
+      metadata: { paymentId: freshPayment.id },
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/payments/session/cs_test_paid/verify`)
+      .set("user", JSON.stringify(adminUser))
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.status).toBe("PAID");
+    expect(res.body.data.stripePaymentIntentId).toBe("pi_test_123");
+    expect(res.body.data.paidAt).toBeTruthy();
+
+    const logs = await prisma.paymentLog.findMany({ where: { paymentId: freshPayment.id } });
+    expect(logs.length).toBeGreaterThan(0);
+    expect(logs.some((l) => l.statusTo === "PAID")).toBe(true);
+
+    await prisma.paymentLog.deleteMany({ where: { paymentId: freshPayment.id } });
+    await prisma.payment.delete({ where: { id: freshPayment.id } });
+  });
+
+  it("POST /api/v1/payments/session/:sessionId/verify — sesión no pagada no modifica pago", async () => {
+    const freshPayment = await prisma.payment.create({
+      data: {
+        residentId, feeId, amount: 555, status: "PENDING",
+        reference: "VERIFY-UNPAID", period: "2026-09",
+      },
+    });
+
+    const { stripeService } = require("@src/modules/payments/stripe.service");
+    stripeService.retrieveCheckoutSession.mockResolvedValueOnce({
+      id: "cs_test_unpaid",
+      payment_status: "unpaid",
+      payment_intent: null,
+      metadata: { paymentId: freshPayment.id },
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/payments/session/cs_test_unpaid/verify`)
+      .set("user", JSON.stringify(adminUser))
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe("PENDING");
+    expect(res.body.data.paidAt).toBeNull();
+
+    await prisma.paymentLog.deleteMany({ where: { paymentId: freshPayment.id } });
+    await prisma.payment.delete({ where: { id: freshPayment.id } });
   });
 });
 

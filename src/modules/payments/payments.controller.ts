@@ -10,6 +10,11 @@ export const checkoutPayment = asyncHandler(async (req: Request, res: Response) 
   return res.status(200).json(createTResult(await paymentsService.checkoutPayment(paymentId)));
 });
 
+export const verifyPaymentSession = asyncHandler(async (req: Request, res: Response) => {
+  const { sessionId } = req.params;
+  return res.status(200).json(createTResult(await paymentsService.verifyPaymentSession(sessionId)));
+});
+
 // ---- Fees ----
 export const getFees = asyncHandler(async (_req: Request, res: Response) => {
   return res.status(200).json(createTResult(await paymentsService.getAllFees()));

@@ -137,5 +137,18 @@ export const stripeService = {
    */
   constructEvent(rawBody: string | Buffer, signature: string, webhookSecret: string): any {
     return stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-  }
+  },
+
+  /**
+   * Retrieves a checkout session by ID. Used as a fallback when the webhook
+   * is delayed or not configured.
+   */
+  async retrieveCheckoutSession(sessionId: string) {
+    try {
+      return await stripe.checkout.sessions.retrieve(sessionId);
+    } catch (err: any) {
+      logger.error(`Failed to retrieve Stripe session ${sessionId}: ${err.message}`);
+      return null;
+    }
+  },
 };

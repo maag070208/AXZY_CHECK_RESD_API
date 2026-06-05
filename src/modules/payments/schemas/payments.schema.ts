@@ -62,6 +62,10 @@ export const PaymentIdParamSchema = z.object({
   params: z.object({ id: z.string().uuid("ID de pago inválido") }),
 });
 
+export const SessionIdParamSchema = z.object({
+  params: z.object({ sessionId: z.string().min(1, "sessionId requerido") }),
+});
+
 // ---- Resident Fees ----
 export const CreateResidentFeeSchema = z.object({
   body: z.object({

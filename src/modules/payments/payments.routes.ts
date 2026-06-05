@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   getFees, getFeeById, addFee, putFee, removeFee, getDataTableFees,
   getDataTable, getPaymentById, addPayment, putPayment, removePayment,
-  checkoutPayment, getSummary,
+  checkoutPayment, verifyPaymentSession, getSummary,
   getResidentFees, getDataTableResidentFees, addResidentFee, bulkAssignResidentFees, bulkUnassignResidentFees, removeResidentFee,
   downloadReceipt,
 } from "./payments.controller";
@@ -10,7 +10,7 @@ import { authenticate } from "../common/middlewares/auth.middleware";
 import { validate } from "../../core/middlewares/validate.middleware";
 import {
   CreateFeeSchema, UpdateFeeSchema, FeeIdParamSchema,
-  CreatePaymentSchema, UpdatePaymentSchema, PaymentIdParamSchema,
+  CreatePaymentSchema, UpdatePaymentSchema, PaymentIdParamSchema, SessionIdParamSchema,
   CreateResidentFeeSchema, BulkAssignResidentFeeSchema, BulkUnassignResidentFeeSchema,
   ResidentFeeIdParamSchema, ResidentFeesQuerySchema, PaymentSummaryQuerySchema,
 } from "./schemas/payments.schema";
@@ -41,6 +41,7 @@ router.get("/summary", validate(PaymentSummaryQuerySchema), getSummary);
 router.post("/datatable", validate(DataTableFetchParamsSchema), getDataTable);
 router.post("/", validate(CreatePaymentSchema), addPayment);
 router.get("/receipt/:id/download", downloadReceipt);
+router.post("/session/:sessionId/verify", validate(SessionIdParamSchema), verifyPaymentSession);
 router.get("/:id", validate(PaymentIdParamSchema), getPaymentById);
 router.put("/:id", validate(UpdatePaymentSchema), putPayment);
 router.post("/:id/checkout", validate(PaymentIdParamSchema), checkoutPayment);
