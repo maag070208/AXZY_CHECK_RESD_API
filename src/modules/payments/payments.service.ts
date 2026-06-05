@@ -465,6 +465,10 @@ export const checkoutPayment = async (paymentId: string) => {
   return { url: session.url, sessionId: session.id };
 };
 
+export const createPaymentIntent = async (paymentId: string) => {
+  return await stripeService.createPaymentIntent(paymentId);
+};
+
 export const verifyPaymentSession = async (sessionId: string) => {
   const session = await stripeService.retrieveCheckoutSession(sessionId);
 

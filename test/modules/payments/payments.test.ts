@@ -22,6 +22,7 @@ jest.mock("@src/modules/payments/stripe.service", () => ({
     }),
     getOrCreateCustomer: jest.fn().mockResolvedValue("cus_mock"),
     retrieveCheckoutSession: jest.fn(),
+    createPaymentIntent: jest.fn(),
   },
 }));
 
@@ -349,6 +350,41 @@ describe("Payments — Payments CRUD + Summary", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe("PENDING");
     expect(res.body.data.paidAt).toBeNull();
+
+    await prisma.paymentLog.deleteMany({ where: { paymentId: freshPayment.id } });
+    await prisma.payment.delete({ where: { id: freshPayment.id } });
+  });
+
+  it("POST /api/v1/payments/:id/payment-intent — debe crear PaymentIntent nativo", async () => {
+    const freshPayment = await prisma.payment.create({
+      data: {
+        residentId, feeId, amount: 1234, status: "PENDING",
+        reference: "PI-TEST", period: "2026-10",
+      },
+    });
+
+    const { stripeService } = require("@src/modules/payments/stripe.service");
+    stripeService.createPaymentIntent.mockResolvedValueOnce({
+      paymentIntentId: "pi_test_native_123",
+      clientSecret: "pi_test_native_123_secret_abc",
+      customerId: "cus_mock",
+      ephemeralKey: "ek_test_mock_xyz",
+      amount: 1234,
+      currency: "mxn",
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/payments/${freshPayment.id}/payment-intent`)
+      .set("user", JSON.stringify(adminUser))
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.clientSecret).toContain("pi_test_native_123_secret_abc");
+    expect(res.body.data.paymentIntentId).toBe("pi_test_native_123");
+    expect(res.body.data.ephemeralKey).toBe("ek_test_mock_xyz");
+    expect(res.body.data.amount).toBe(1234);
+    expect(res.body.data.currency).toBe("mxn");
 
     await prisma.paymentLog.deleteMany({ where: { paymentId: freshPayment.id } });
     await prisma.payment.delete({ where: { id: freshPayment.id } });

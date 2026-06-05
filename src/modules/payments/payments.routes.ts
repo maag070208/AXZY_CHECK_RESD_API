@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   getFees, getFeeById, addFee, putFee, removeFee, getDataTableFees,
   getDataTable, getPaymentById, addPayment, putPayment, removePayment,
-  checkoutPayment, verifyPaymentSession, getSummary,
+  checkoutPayment, createPaymentIntent, verifyPaymentSession, getSummary,
   getResidentFees, getDataTableResidentFees, addResidentFee, bulkAssignResidentFees, bulkUnassignResidentFees, removeResidentFee,
   downloadReceipt,
 } from "./payments.controller";
@@ -45,6 +45,7 @@ router.post("/session/:sessionId/verify", validate(SessionIdParamSchema), verify
 router.get("/:id", validate(PaymentIdParamSchema), getPaymentById);
 router.put("/:id", validate(UpdatePaymentSchema), putPayment);
 router.post("/:id/checkout", validate(PaymentIdParamSchema), checkoutPayment);
+router.post("/:id/payment-intent", validate(PaymentIdParamSchema), createPaymentIntent);
 router.delete("/:id", validate(PaymentIdParamSchema), removePayment);
 
 export default router;

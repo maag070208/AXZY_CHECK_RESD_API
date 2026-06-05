@@ -7,10 +7,76 @@ import { sendPaymentSuccessEmail } from "@src/core/utils/emailSender";
 import { generateAndUploadReceipt } from "./payments.receipt.service";
 import Stripe from "stripe";
 
+const markPaymentAsPaid = async (
+  paymentId: string,
+  paymentIntentId: string,
+  notes: string,
+) => {
+  const payment = await prismaClient.payment.findUnique({
+    where: { id: paymentId },
+    select: { id: true, status: true, residentId: true, feeId: true, amount: true, period: true, createdAt: true, fee: { select: { name: true } } },
+  });
+
+  if (!payment || payment.status === "PAID") return;
+
+  await prismaClient.$transaction(async (tx) => {
+    await tx.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: "PAID",
+        stripePaymentIntentId: paymentIntentId,
+        paidAt: new Date(),
+      },
+    });
+
+    await tx.paymentLog.create({
+      data: {
+        paymentId,
+        residentId: payment.residentId,
+        action: "STATUS_CHANGE",
+        statusFrom: payment.status as any,
+        statusTo: "PAID",
+        amount: payment.amount,
+        notes,
+      },
+    });
+
+    if (payment.feeId) {
+      await handleRecurringPayment(tx, payment.residentId, payment.feeId, payment.period);
+    }
+  });
+
+  logger.info(`Payment ${paymentId} completed via Stripe (PI: ${paymentIntentId})`);
+
+  prismaClient.resident.findUnique({
+    where: { id: payment.residentId },
+    select: { id: true, email: true, phone: true, user: { select: { name: true, lastName: true } } },
+  }).then(async (residentFull) => {
+    if (residentFull) {
+      sendPaymentSuccessEmail(
+        { amount: payment.amount, fee: null },
+        { ...residentFull, name: residentFull.user?.name },
+      );
+
+      const receiptUrl = await generateAndUploadReceipt(
+        { ...payment, stripePaymentIntentId: paymentIntentId, paidAt: new Date() },
+        residentFull,
+      );
+      if (receiptUrl) {
+        await prismaClient.payment.update({
+          where: { id: paymentId },
+          data: { s3ReceiptUrl: receiptUrl },
+        });
+        logger.info(`Receipt PDF uploaded for payment ${paymentId}: ${receiptUrl}`);
+      }
+    }
+  }).catch((err) => logger.error("Error processing post-payment tasks:", err));
+};
+
 export const handleStripeWebhook = async (req: Request, res: Response) => {
   const signature = req.headers["stripe-signature"];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  
+
   let event: any;
 
   try {
@@ -63,70 +129,62 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
           const paymentIntentId = session.payment_intent as string;
 
           if (paymentId) {
-            const payment = await prismaClient.payment.findUnique({
-              where: { id: paymentId },
-              select: { id: true, status: true, residentId: true, feeId: true, amount: true, period: true, createdAt: true, fee: { select: { name: true } } },
-            });
-
-            if (payment && payment.status !== "PAID") {
-              await prismaClient.$transaction(async (tx) => {
-                await tx.payment.update({
-                  where: { id: paymentId },
-                  data: {
-                    status: "PAID",
-                    stripePaymentIntentId: paymentIntentId,
-                    paidAt: new Date(),
-                  },
-                });
-
-                await tx.paymentLog.create({
-                  data: {
-                    paymentId,
-                    residentId: payment.residentId,
-                    action: "STATUS_CHANGE",
-                    statusFrom: payment.status as any,
-                    statusTo: "PAID",
-                    amount: payment.amount,
-                    notes: "Pagado vía Stripe Checkout",
-                  },
-                });
-
-                if (payment.feeId) {
-                  await handleRecurringPayment(tx, payment.residentId, payment.feeId, payment.period);
-                }
-              });
-
-              logger.info(`Payment ${paymentId} completed via Stripe (PI: ${paymentIntentId})`);
-
-              prismaClient.resident.findUnique({
-                where: { id: payment.residentId },
-                select: { id: true, email: true, phone: true, user: { select: { name: true, lastName: true } } },
-              }).then(async (residentFull) => {
-                if (residentFull) {
-                  sendPaymentSuccessEmail(
-                    { amount: payment.amount, fee: null },
-                    { ...residentFull, name: residentFull.user?.name },
-                  );
-
-                  const receiptUrl = await generateAndUploadReceipt(
-                    { ...payment, stripePaymentIntentId: paymentIntentId, paidAt: new Date() },
-                    residentFull,
-                  );
-                  if (receiptUrl) {
-                    await prismaClient.payment.update({
-                      where: { id: paymentId },
-                      data: { s3ReceiptUrl: receiptUrl },
-                    });
-                    logger.info(`Receipt PDF uploaded for payment ${paymentId}: ${receiptUrl}`);
-                  }
-                }
-              }).catch((err) => logger.error("Error processing post-payment tasks:", err));
-            }
+            await markPaymentAsPaid(
+              paymentId,
+              paymentIntentId,
+              "Pagado vía Stripe Checkout",
+            );
           }
         }
         break;
       }
-      
+
+      case "payment_intent.succeeded": {
+        const intent = event.data.object as any;
+        const paymentId = intent.metadata?.paymentId;
+        if (paymentId) {
+          await markPaymentAsPaid(
+            paymentId,
+            intent.id,
+            "Pagado vía Stripe (native mobile SDK)",
+          );
+        }
+        break;
+      }
+
+      case "payment_intent.payment_failed": {
+        const intent = event.data.object as any;
+        const paymentId = intent.metadata?.paymentId;
+        const failureMessage = intent.last_payment_error?.message || "Pago rechazado";
+        if (paymentId) {
+          const payment = await prismaClient.payment.findUnique({
+            where: { id: paymentId },
+            select: { id: true, status: true, residentId: true, amount: true },
+          });
+          if (payment && payment.status !== "FAILED") {
+            await prismaClient.$transaction(async (tx) => {
+              await tx.payment.update({
+                where: { id: paymentId },
+                data: { status: "FAILED" },
+              });
+              await tx.paymentLog.create({
+                data: {
+                  paymentId,
+                  residentId: payment.residentId,
+                  action: "STATUS_CHANGE",
+                  statusFrom: payment.status as any,
+                  statusTo: "FAILED",
+                  amount: payment.amount,
+                  notes: `Pago fallido: ${failureMessage}`,
+                },
+              });
+            });
+            logger.warn(`Payment ${paymentId} failed via Stripe: ${failureMessage}`);
+          }
+        }
+        break;
+      }
+
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as any;
         const subscriptionId = invoice.subscription as string;

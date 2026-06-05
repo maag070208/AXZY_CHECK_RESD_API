@@ -116,7 +116,7 @@ export const stripeService = {
               name: payment.fee?.name || "Pago de Cuota",
               description: payment.fee?.description || undefined,
             },
-            unit_amount: Math.round(Number(payment.amount) * 100), // Stripe expects cents
+            unit_amount: Math.round(Number(payment.amount) * 100),
           },
           quantity: 1,
         },
@@ -130,6 +130,57 @@ export const stripeService = {
     });
 
     return session;
+  },
+
+  /**
+   * Creates a PaymentIntent for a specific payment. Used by the native mobile
+   * app with @stripe/stripe-react-native to confirm payments with the
+   * PaymentSheet (Apple Pay / Google Pay / card).
+   */
+  async createPaymentIntent(paymentId: string) {
+    const payment = await prismaClient.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        resident: { include: { user: true } },
+        fee: true,
+      },
+    });
+
+    if (!payment) throw new Error("Payment not found");
+    if (payment.status === "PAID") throw new Error("Payment already paid");
+
+    const resident = payment.resident;
+    const customerId = await this.getOrCreateCustomer(
+      resident.id,
+      resident.email || undefined,
+      `${resident.user.name} ${resident.user.lastName || ""}`
+    );
+
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: customerId },
+      { apiVersion: "2024-09-30.acacia" }
+    );
+
+    const intent = await stripe.paymentIntents.create({
+      amount: Math.round(Number(payment.amount) * 100),
+      currency: "mxn",
+      customer: customerId,
+      description: payment.fee?.name || "Pago de Cuota",
+      metadata: {
+        paymentId: payment.id,
+        residentId: resident.id,
+      },
+      automatic_payment_methods: { enabled: true },
+    });
+
+    return {
+      paymentIntentId: intent.id,
+      clientSecret: intent.client_secret as string,
+      customerId,
+      ephemeralKey: ephemeralKey.secret as string,
+      amount: Number(payment.amount),
+      currency: "mxn",
+    };
   },
 
   /**
