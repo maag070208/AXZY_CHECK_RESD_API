@@ -15,6 +15,11 @@ export const createPaymentIntent = asyncHandler(async (req: Request, res: Respon
   return res.status(200).json(createTResult(await paymentsService.createPaymentIntent(paymentId)));
 });
 
+export const verifyPayment = asyncHandler(async (req: Request, res: Response) => {
+  const paymentId = req.params.id;
+  return res.status(200).json(createTResult(await paymentsService.verifyPaymentIntent(paymentId)));
+});
+
 export const verifyPaymentSession = asyncHandler(async (req: Request, res: Response) => {
   const { sessionId } = req.params;
   return res.status(200).json(createTResult(await paymentsService.verifyPaymentSession(sessionId)));

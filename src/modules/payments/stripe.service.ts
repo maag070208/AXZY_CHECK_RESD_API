@@ -202,4 +202,17 @@ export const stripeService = {
       return null;
     }
   },
+
+  /**
+   * Retrieves a PaymentIntent by ID. Used by the native mobile app to verify
+   * payment status immediately after confirmPayment.
+   */
+  async retrievePaymentIntent(paymentIntentId: string) {
+    try {
+      return await stripe.paymentIntents.retrieve(paymentIntentId);
+    } catch (err: any) {
+      logger.error(`Failed to retrieve PaymentIntent ${paymentIntentId}: ${err.message}`);
+      return null;
+    }
+  },
 };

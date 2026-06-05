@@ -466,7 +466,93 @@ export const checkoutPayment = async (paymentId: string) => {
 };
 
 export const createPaymentIntent = async (paymentId: string) => {
-  return await stripeService.createPaymentIntent(paymentId);
+  const result = await stripeService.createPaymentIntent(paymentId);
+
+  await prisma.payment.update({
+    where: { id: paymentId },
+    data: { stripePaymentIntentId: result.paymentIntentId },
+  });
+
+  return result;
+};
+
+export const verifyPaymentIntent = async (paymentId: string) => {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: { id: true, status: true, stripePaymentIntentId: true, residentId: true, feeId: true, amount: true, period: true, fee: { select: { name: true } } },
+  });
+
+  if (!payment) throw new AppError("Pago no encontrado", 404);
+
+  if (payment.status === "PAID") {
+    return await getPaymentById(paymentId);
+  }
+
+  if (!payment.stripePaymentIntentId) {
+    return await getPaymentById(paymentId);
+  }
+
+  const intent = await stripeService.retrievePaymentIntent(payment.stripePaymentIntentId);
+  if (!intent) {
+    return await getPaymentById(paymentId);
+  }
+
+  const isPending = intent.status === "processing" || intent.status === "requires_payment_method";
+  if (isPending) {
+    return await getPaymentById(paymentId);
+  }
+
+  if (intent.status !== "succeeded") {
+    if (intent.status === "canceled" || intent.status === "requires_payment_method") {
+      await prisma.payment.update({
+        where: { id: paymentId },
+        data: { status: "FAILED" },
+      });
+    }
+    return await getPaymentById(paymentId);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+      },
+    });
+
+    await tx.paymentLog.create({
+      data: {
+        paymentId,
+        residentId: payment.residentId,
+        action: "STATUS_CHANGE",
+        statusFrom: payment.status,
+        statusTo: "PAID",
+        amount: payment.amount,
+        notes: "Pagado vía Stripe SDK (verificación síncrona)",
+      },
+    });
+
+    if (payment.feeId) {
+      await handleRecurringPayment(tx, payment.residentId, payment.feeId, payment.period);
+    }
+  });
+
+  logger.info(`Payment ${paymentId} verified via PaymentIntent ${payment.stripePaymentIntentId}`);
+
+  prisma.resident.findUnique({
+    where: { id: payment.residentId },
+    select: { id: true, email: true, phone: true, user: { select: { name: true, lastName: true } } },
+  }).then(async (residentFull) => {
+    if (residentFull) {
+      sendPaymentSuccessEmail(
+        { amount: payment.amount, fee: null },
+        { ...residentFull, name: residentFull.user?.name },
+      );
+    }
+  }).catch((err) => logger.error("Error sending payment email:", err));
+
+  return await getPaymentById(paymentId);
 };
 
 export const verifyPaymentSession = async (sessionId: string) => {
