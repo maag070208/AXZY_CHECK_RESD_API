@@ -1,21 +1,26 @@
-FROM node:22-alpine AS builder
-RUN corepack enable
+FROM node:22-alpine AS deps
+RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 WORKDIR /app
-
 COPY pnpm-lock.yaml package.json ./
-RUN pnpm install
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store && \
+    pnpm install --frozen-lockfile
 
-COPY prisma ./prisma
-COPY swagger.yaml tsconfig.json ./
-COPY src ./src
-
+FROM node:22-alpine AS builder
+RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 RUN npx prisma generate
 RUN pnpm build
 
-FROM node:22-alpine
+FROM node:22-alpine AS runner
 WORKDIR /app
+ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json /app/swagger.yaml ./
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/swagger.yaml ./
+COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/assets ./src/assets
 EXPOSE 4321
