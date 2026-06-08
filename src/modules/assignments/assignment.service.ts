@@ -1,15 +1,15 @@
+import { AssignmentStatus } from "@prisma/client";
+import {
+  ASSIGNMENT_STATUS_PENDING,
+  OPERATIONAL_ROLES,
+} from "@src/core/config/constants";
 import { prismaClient } from "@src/core/config/database";
-import { PrismaClient, AssignmentStatus } from "@prisma/client";
 import {
   ITDataTableFetchParams,
   ITDataTableResponse,
 } from "@src/core/dto/datatable.dto";
-import { getPrismaPaginationParams } from "@src/core/utils/prisma-pagination.utils";
 import { now } from "@src/core/utils/date-time.utils";
-import {
-  OPERATIONAL_ROLES,
-  ASSIGNMENT_STATUS_PENDING,
-} from "@src/core/config/constants";
+import { getPrismaPaginationParams } from "@src/core/utils/prisma-pagination.utils";
 import { CreateAssignmentSchema } from "./schemas/assignment.schema";
 
 import { AppError } from "@src/core/errors/AppError";

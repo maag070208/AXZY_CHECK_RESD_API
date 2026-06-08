@@ -31,7 +31,8 @@ const getNextPeriod = (currentPeriod?: string | null): string => {
   return date.add(1, "month").format("YYYY-MM");
 };
 
-export const handleRecurringPayment = async (tx: any, residentId: string, feeId: string, currentPeriod?: string | null) => {
+export const handleRecurringPayment = async (tx: any, residentId: string, feeId: string | null, currentPeriod?: string | null) => {
+  if (!feeId) return;
   const currentFee = await tx.fee.findUnique({
     where: { id: feeId },
     select: { type: true, amount: true },
@@ -154,7 +155,11 @@ export const createFee = async (data: {
       description: data.description || null,
       amount: data.amount,
       type: data.type ?? "ONE_TIME",
-      ...(data.dueDate ? { dueDate: new Date(data.dueDate) } : {}),
+      dueDate: data.dueDate
+        ? new Date(data.dueDate)
+        : data.type === "MONTHLY"
+          ? dayjs().add(1, "month").startOf("month").toDate()
+          : dayjs().add(30, "day").toDate(),
       active: data.active ?? true,
     },
     select: feeSelect,
@@ -236,34 +241,38 @@ export const getDataTablePayments = async (
 
   const where: any = { deletedAt: null };
   if (residentId) where.residentId = residentId;
-  if (feeId) where.feeId = feeId;
+  if (feeId) {
+    if (feeId === "null") where.feeId = null;
+    else if (feeId === "notnull") where.feeId = { not: null };
+    else where.feeId = feeId;
+  }
   if (status) where.status = status as PaymentStatus;
   if (dateFrom || dateTo) {
-    where.period = {};
-    if (dateFrom) where.period.gte = dayjs(dateFrom).format("YYYY-MM");
-    if (dateTo) where.period.lte = dayjs(dateTo).format("YYYY-MM");
+    where.createdAt = {};
+    if (dateFrom) where.createdAt.gte = new Date(dateFrom as string);
+    if (dateTo) where.createdAt.lte = new Date(dateTo as string);
   }
   if (search) {
     where.OR = [
-      { id: { contains: search, mode: "insensitive" } },
-      { resident: { user: { name: { contains: search, mode: "insensitive" } } } },
-      { resident: { user: { lastName: { contains: search, mode: "insensitive" } } } },
-      { fee: { name: { contains: search, mode: "insensitive" } } },
+      { resident: { user: { name: { contains: search as string, mode: "insensitive" } } } },
+      { resident: { user: { lastName: { contains: search as string, mode: "insensitive" } } } },
+      { fee: { name: { contains: search as string, mode: "insensitive" } } },
     ];
   }
 
-  const [rows, total] = await Promise.all([
-    prisma.payment.findMany({
-      where,
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      select: paymentListSelect,
-    }),
-    prisma.payment.count({ where }),
-  ]);
+  const orderBy: any = { createdAt: "desc" };
 
-  return { rows, total };
+  const skip = (page - 1) * limit;
+  const total = await prisma.payment.count({ where });
+  const rows = await prisma.payment.findMany({
+    where,
+    select: paymentSelect,
+    orderBy,
+    skip,
+    take: limit,
+  });
+
+  return { rows: rows as any[], total };
 };
 
 export const getPaymentById = async (id: string) => {
@@ -300,27 +309,32 @@ export const getReceiptPDF = async (id: string): Promise<Buffer | null> => {
 
 export const createPayment = async (data: {
   residentId: string;
-  feeId: string;
+  feeId?: string;
   amount: number;
   reference?: string;
+  concept?: string;
   status?: PaymentStatus;
   paidAt?: string;
   period?: string;
 }) => {
   const payment = await prisma.$transaction(async (tx) => {
-    const fee = await tx.fee.findUnique({
-      where: { id: data.feeId },
-      select: { type: true },
-    });
+    let feeType: string | undefined;
+    if (data.feeId) {
+      const fee = await tx.fee.findUnique({
+        where: { id: data.feeId },
+        select: { type: true, name: true },
+      });
+      feeType = fee?.type;
+    }
 
-    const period = data.period || (fee?.type === "MONTHLY" ? dayjs().format("YYYY-MM") : null);
+    const period = data.period || (feeType === "MONTHLY" ? dayjs().format("YYYY-MM") : null);
 
     const p = await tx.payment.create({
       data: {
         residentId: data.residentId,
-        feeId: data.feeId,
+        feeId: data.feeId || null,
         amount: data.amount,
-        reference: data.reference || null,
+        reference: data.reference || data.concept || null,
         status: (data.status as PaymentStatus) || PaymentStatus.PENDING,
         period,
         paidAt: data.paidAt ? new Date(data.paidAt) : null,
@@ -338,7 +352,7 @@ export const createPayment = async (data: {
       },
     });
 
-    if (p.status === PaymentStatus.PAID) {
+    if (p.status === PaymentStatus.PAID && data.feeId && period) {
       await handleRecurringPayment(tx, data.residentId, data.feeId, period);
     }
 

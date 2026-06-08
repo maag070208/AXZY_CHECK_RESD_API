@@ -38,9 +38,10 @@ export const FeeIdParamSchema = z.object({
 export const CreatePaymentSchema = z.object({
   body: z.object({
     residentId: z.string().uuid("ID de residente inválido"),
-    feeId: z.string().uuid("ID de cuota inválido"),
+    feeId: z.string().uuid("ID de cuota inválido").optional(),
     amount: z.number({ message: "Monto requerido" }),
     reference: z.string().optional(),
+    concept: z.string().optional(),
     status: z.enum(PAYMENT_STATUSES, { message: "Estado inválido" }).optional(),
     paidAt: z.string().optional(),
     period: z.string().optional(),

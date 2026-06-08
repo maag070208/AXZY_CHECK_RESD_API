@@ -368,7 +368,7 @@ model ResidentSubscription {
 model Payment {
   id         String        @id @default(uuid())
   residentId String
-  feeId      String
+  feeId      String?
   amount     Decimal
   reference  String?
   status     PaymentStatus @default(PENDING)
@@ -382,7 +382,7 @@ model Payment {
   deletedAt  DateTime?
 
   resident    Resident     @relation(fields: [residentId], references: [id])
-  fee         Fee          @relation(fields: [feeId], references: [id])
+  fee         Fee?         @relation(fields: [feeId], references: [id])
   paymentLogs PaymentLog[]
 
   @@index([residentId, status])

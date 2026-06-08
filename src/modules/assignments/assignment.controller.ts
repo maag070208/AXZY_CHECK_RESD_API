@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import * as assignmentService from "./assignment.service";
 import { createTResult } from "@src/core/mappers/tresult.mapper";
-import { AssignmentStatus } from "@prisma/client";
 import { asyncHandler } from "@src/core/utils/asyncHandler";
 import { AppError } from "@src/core/errors/AppError";
 
@@ -33,7 +32,7 @@ export const getAllAssignments = asyncHandler(async (req: Request, res: Response
   const result = await assignmentService.getAllAssignments({
     id: id as string,
     guardId: guardId as string,
-    status: status as AssignmentStatus,
+    status: status as any,
   });
   return res.status(200).json(createTResult(result));
 });
