@@ -29,7 +29,7 @@ export const ComplaintCategoryIdParamSchema = z.object({
 
 export const CreateComplaintSchema = z.object({
   body: z.object({
-    residentId: z.string().uuid("ID de residente inválido"),
+    residentId: z.string().uuid("ID de residente inválido").optional(),
     categoryId: z.string().uuid("ID de categoría inválido"),
     title: z.string({ message: "Título requerido" }),
     description: z.string({ message: "Descripción requerida" }),

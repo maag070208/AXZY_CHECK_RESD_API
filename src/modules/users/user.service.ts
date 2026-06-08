@@ -148,10 +148,6 @@ export const getUserByUsername = async (username: string) => {
       scheduleId: true,
       role: { select: { id: true, name: true, value: true } },
       schedule: { select: { id: true, startTime: true, endTime: true, name: true } },
-      assignmentLogs: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-      },
     },
   });
 };
@@ -195,24 +191,29 @@ export const updateUser = async (id: string, data: IUserUpdateRequest) => {
     if (roleObj) userData.roleId = roleObj.id;
   }
 
-  // Remove undefined/null for fields that Prisma doesn't like as null
   if (userData.roleId === null) delete userData.roleId;
 
-  return prismaClient.$transaction(async (tx) => {
-    const updatedUser = await tx.user.update({
-      where: { id },
-      data: userData as any,
-      include: { schedule: true, role: true },
-    });
+  if (userData.active === false) {
+    return prismaClient.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { id },
+        data: userData as any,
+        include: { schedule: true, role: true },
+      });
 
-    if (userData.active === false) {
       await tx.resident.updateMany({
         where: { userId: id, deletedAt: null, active: true },
         data: { active: false },
       });
-    }
 
-    return updatedUser;
+      return updatedUser;
+    });
+  }
+
+  return prismaClient.user.update({
+    where: { id },
+    data: userData as any,
+    include: { schedule: true, role: true },
   });
 };
 
