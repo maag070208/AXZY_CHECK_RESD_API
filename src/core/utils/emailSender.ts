@@ -256,46 +256,85 @@ export const sendPaymentSuccessEmail = async (payment: any, resident: any) => {
       return;
     }
 
-    const subject = `💰 Pago Confirmado: ${payment.fee?.name || "Cuota"}`;
-    const htmlContent = `
-      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-        <div style="background-color: #065911; padding: 20px; text-align: center;">
-          <h2 style="color: #ffffff; margin: 0; font-size: 24px;">💰 Pago Confirmado</h2>
-        </div>
-        
-        <div style="padding: 30px; background-color: #ffffff;">
-          <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
-            Hola <strong>${resident?.user?.name || resident?.name || ""}</strong>, tu pago ha sido procesado exitosamente.
-          </p>
-          
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; width: 40%; font-weight: bold; color: #555;">Concepto:</td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #333;">${payment.fee?.name || "Cuota"}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Monto:</td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #333; font-size: 18px; font-weight: bold;">$${Number(payment.amount).toFixed(2)} MXN</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Estado:</td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #333;">
-                <span style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">PAGADO</span>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Fecha:</td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #333;">${new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</td>
-            </tr>
-          </table>
+    const residentName = resident?.user?.name || resident?.name || "";
+    const periodLabel = payment.period
+      ? new Date(payment.period + "-01").toLocaleDateString("es-MX", { year: "numeric", month: "long" })
+      : "";
+    const amountFormatted = new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+    }).format(Number(payment.amount));
+    const paidDate = payment.paidAt
+      ? new Date(payment.paidAt).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })
+      : new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" });
 
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-             <a href="${process.env.SYSTEM_URL || "http://localhost:12345"}/#/payments" style="background-color: #065911; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 5px; font-weight: bold;">Ver Mis Pagos</a>
+    const subject = `Comprobante de Pago - ${payment.fee?.name || "Cuota"}`;
+    const htmlContent = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+        <div style="background: linear-gradient(135deg, #065911 0%, #0a7a1a 100%); padding: 32px 28px; text-align: center;">
+          <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.15); border-radius: 16px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 28px;">&#9989;</span>
           </div>
+          <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px;">PAGO CONFIRMADO</h1>
+          <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 13px; font-weight: 500;">Tu pago ha sido procesado exitosamente</p>
         </div>
         
-        <div style="background-color: #fcfcfc; padding: 15px; text-align: center; border-top: 1px solid #e0e0e0;">
-          <p style="font-size: 12px; color: #999; margin: 0;">AXZY CHECK - Sistema de Administración Residencial</p>
+        <div style="padding: 28px;">
+          <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px; color: #475569;">
+            Hola <strong style="color: #1e293b;">${residentName}</strong>,<br/>
+            ${periodLabel ? `Tu pago correspondiente a <strong>${periodLabel}</strong> ha sido acreditado correctamente.` : "Tu pago ha sido acreditado correctamente."}
+          </p>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Concepto</td>
+              </tr>
+              <tr>
+                <td style="padding: 0 0 12px; font-size: 15px; font-weight: 700; color: #1e293b;">${payment.fee?.name || "Cuota"}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Monto</td>
+              </tr>
+              <tr>
+                <td style="padding: 0 0 12px; font-size: 20px; font-weight: 800; color: #065911;">${amountFormatted} MXN</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Estado</td>
+              </tr>
+              <tr>
+                <td style="padding: 0 0 12px;">
+                  <span style="background-color: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">PAGADO</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Fecha de Pago</td>
+              </tr>
+              <tr>
+                <td style="padding: 0 0 12px; font-size: 14px; font-weight: 600; color: #475569;">${paidDate}</td>
+              </tr>
+              ${payment.id ? `
+              <tr>
+                <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Folio</td>
+              </tr>
+              <tr>
+                <td style="padding: 0; font-size: 13px; font-weight: 600; color: #64748b; font-family: monospace;">#${String(payment.id).slice(0, 8).toUpperCase()}</td>
+              </tr>
+              ` : ""}
+            </table>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 8px;">
+            <a href="${process.env.SYSTEM_URL || "http://localhost:12345"}/#/payments" style="display: inline-block; background: #065911; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 700; font-size: 14px; letter-spacing: 0.5px;">Ver Mis Pagos</a>
+          </div>
+          <p style="text-align: center; font-size: 11px; color: #94a3b8; margin: 16px 0 0;">
+            Tambien puedes consultar tu estado de cuenta desde la aplicacion movil.
+          </p>
+        </div>
+        
+        <div style="background: #f8fafc; padding: 16px 28px; text-align: center; border-top: 1px solid #e2e8f0;">
+          <p style="font-size: 11px; color: #94a3b8; margin: 0; font-weight: 600; letter-spacing: 0.5px;">AXZY CHECK &mdash; Administracion Residencial</p>
+          <p style="font-size: 10px; color: #cbd5e1; margin: 4px 0 0;">Este es un mensaje automatico, por favor no respondas a este correo.</p>
         </div>
       </div>
     `;
