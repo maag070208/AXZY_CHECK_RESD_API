@@ -71,7 +71,7 @@ describe("Rutas de Kardex (Integración Total)", () => {
     if (createdGuardId) await prismaClient.user.delete({ where: { id: createdGuardId } }).catch(() => {});
     if (createdLocationId) await prismaClient.location.delete({ where: { id: createdLocationId } }).catch(() => {});
     if (createdZoneId) await prismaClient.zone.delete({ where: { id: createdZoneId } }).catch(() => {});
-    if (createdClientId) await prismaClient.client.delete({ where: { id: createdClientId } }).catch(() => {});
+    if (createdClientId) await (prismaClient as any).client.delete({ where: { id: createdClientId } }).catch(() => {});
   });
 
   describe("Operaciones de Bitácora (Kardex)", () => {

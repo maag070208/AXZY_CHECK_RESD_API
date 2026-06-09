@@ -29,7 +29,7 @@ describe("Rutas de Sincronización (Offline - Sync)", () => {
   });
 
   afterAll(async () => {
-    if (createdClientId) await prismaClient.client.delete({ where: { id: createdClientId } }).catch(() => {});
+    if (createdClientId) await (prismaClient as any).client.delete({ where: { id: createdClientId } }).catch(() => {});
     // Limpiar zona creada por push
     await prismaClient.zone.deleteMany({ where: { name: "Push Zone" } }).catch(() => {});
   });

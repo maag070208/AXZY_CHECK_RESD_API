@@ -56,7 +56,7 @@ describe("Flujo Crítico E2E: Cliente -> Zonas -> Ubicaciones -> Guardias -> Rec
   afterAll(async () => {
     // Cleanup cascade
     if (clientId) {
-      await prismaClient.client.delete({ where: { id: clientId } }).catch(() => {});
+      await (prismaClient as any).client.delete({ where: { id: clientId } }).catch(() => {});
     }
   });
 

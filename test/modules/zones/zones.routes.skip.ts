@@ -21,7 +21,7 @@ describe("Rutas de Zonas (Integración)", () => {
 
   beforeAll(async () => {
     // Crear un cliente directamente en la BD para usar su ID en los tests de zonas
-    const client = await prismaClient.client.create({
+    const client = await (prismaClient as any).client.create({
       data: { name: `Cliente Temp para Zonas ${Date.now()}` }
     });
     createdClientId = client.id;
@@ -30,7 +30,7 @@ describe("Rutas de Zonas (Integración)", () => {
   afterAll(async () => {
     // Limpieza del cliente
     if (createdClientId) {
-      await prismaClient.client.delete({ where: { id: createdClientId } }).catch(() => {});
+      await (prismaClient as any).client.delete({ where: { id: createdClientId } }).catch(() => {});
     }
   });
 

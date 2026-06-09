@@ -4,6 +4,7 @@ import { incidentCatalogsSeed } from "./seeds/incidents";
 import { maintenanceCatalogsSeed } from "./seeds/maintenance";
 import { schedulesSeed }        from "./seeds/schedules";
 import { securitySeed }         from "./seeds/security";
+import { locationsSeed }        from "./seeds/locations";
 import { housesSeed }           from "./seeds/houses";
 import { residentsSeed }        from "./seeds/residents";
 import { vehiclesSeed }         from "./seeds/vehicles";
@@ -31,6 +32,9 @@ async function main() {
   // ── Users ─────────────────────────────────────────────────────────────────
   hackerLog.header("Phase 2: Users");
   await securitySeed(prisma);           // admins, guardias, residents users
+
+  // ── Locations ─────────────────────────────────────────────────────────────
+  await locationsSeed(prisma);
 
   // ── Property ──────────────────────────────────────────────────────────────
   hackerLog.header("Phase 3: Property");

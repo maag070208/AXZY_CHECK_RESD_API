@@ -78,7 +78,7 @@ describe("Rutas de Configuración de Rondas (Recurrencia) - Integración Total",
     if (createdRecurringId) await request(app).delete(`/api/v1/recurring/${createdRecurringId}`);
     if (createdGuardId) await prismaClient.user.delete({ where: { id: createdGuardId } }).catch(() => {});
     if (createdZoneId) await prismaClient.zone.delete({ where: { id: createdZoneId } }).catch(() => {});
-    if (createdClientId) await prismaClient.client.delete({ where: { id: createdClientId } }).catch(() => {});
+    if (createdClientId) await (prismaClient as any).client.delete({ where: { id: createdClientId } }).catch(() => {});
   });
 
   describe("Flujo Completo de Configuración de Ronda", () => {

@@ -247,10 +247,10 @@ export const getDataTablePayments = async (
     else where.feeId = feeId;
   }
   if (status) where.status = status as PaymentStatus;
-  if (dateFrom || dateTo) {
-    where.createdAt = {};
-    if (dateFrom) where.createdAt.gte = new Date(dateFrom as string);
-    if (dateTo) where.createdAt.lte = new Date(dateTo as string);
+  if (dateFrom && dateTo) {
+    where.period = {};
+    where.period.gte = dayjs(dateFrom as string).format("YYYY-MM");
+    where.period.lte = dayjs(dateTo as string).format("YYYY-MM");
   }
   if (search) {
     where.OR = [
@@ -434,13 +434,11 @@ export const getPaymentSummary = async (residentId?: string, from?: string, to?:
     whereOverdue.residentId = residentId;
   }
 
-  if (from || to) {
-    if (from) {
-      wherePaid.createdAt = { ...wherePaid.createdAt, gte: new Date(from) };
-    }
-    if (to) {
-      wherePaid.createdAt = { ...wherePaid.createdAt, lte: new Date(to) };
-    }
+  if (from && to) {
+    const periodFrom = dayjs(from).format("YYYY-MM");
+    const periodTo = dayjs(to).format("YYYY-MM");
+    wherePaid.period = { gte: periodFrom, lte: periodTo };
+    wherePending.period = { gte: periodFrom, lte: periodTo };
   }
 
   const [paidPayments, pendingPayments, overduePayments] = await Promise.all([

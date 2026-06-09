@@ -1,6 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 
 export const locationsSeed = async (prisma: PrismaClient) => {
+  let zone = await prisma.zone.findFirst({ where: { name: "ZONA1" } });
+  if (!zone) {
+    zone = await prisma.zone.create({
+      data: { name: "ZONA1", active: true },
+    });
+  }
+
   const locations = [
     // 🏠 ACCESOS / GENERALES
     { name: "Acceso Principal", aisle: "GENERAL", spot: "ENTRADA", number: "1" },
@@ -82,6 +89,7 @@ export const locationsSeed = async (prisma: PrismaClient) => {
       await prisma.location.create({
         data: {
           ...location,
+          zoneId: zone!.id,
           isOccupied: false,
         },
       });

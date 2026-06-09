@@ -19,4 +19,5 @@ export interface IUserResponse {
     endTime: string;
   } | null;
   assignmentLogs?: any[];
+  assignments?: { id: string }[];
 }

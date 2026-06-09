@@ -7,7 +7,6 @@ export const prismaClient = basePrisma.$extends({
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
         const softDeleteModels = [
-          "Client",
           "Zone",
           "User",
           "Location",

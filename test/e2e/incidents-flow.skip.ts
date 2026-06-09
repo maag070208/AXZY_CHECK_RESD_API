@@ -69,7 +69,7 @@ describe("Flujo Crítico E2E: Gestión de Incidencias", () => {
     adminHeader = JSON.stringify({ id: adminUser.id, role: "ADMIN" });
 
     // Client
-    const client = await prismaClient.client.create({
+    const client = await (prismaClient as any).client.create({
       data: { name: `Cliente E2E Inc ${Date.now()}` },
     });
     clientId = client.id;

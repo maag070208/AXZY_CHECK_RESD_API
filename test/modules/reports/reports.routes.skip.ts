@@ -62,7 +62,7 @@ describe("Rutas de Reportes (Integración Total)", () => {
 
   afterAll(async () => {
     if (createdGuardId) await prismaClient.user.delete({ where: { id: createdGuardId } }).catch(() => {});
-    if (createdClientId) await prismaClient.client.delete({ where: { id: createdClientId } }).catch(() => {});
+    if (createdClientId) await (prismaClient as any).client.delete({ where: { id: createdClientId } }).catch(() => {});
   });
 
   describe("Endpoints de Analítica y Reportes", () => {

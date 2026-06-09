@@ -58,7 +58,7 @@ describe("Flujo Crítico E2E: Gestión de Mantenimientos", () => {
     adminHeader = JSON.stringify({ id: adminUser.id, role: "ADMIN" });
 
     // Client
-    const client = await prismaClient.client.create({
+    const client = await (prismaClient as any).client.create({
       data: { name: `Cliente E2E Maint ${Date.now()}` },
     });
     clientId = client.id;
