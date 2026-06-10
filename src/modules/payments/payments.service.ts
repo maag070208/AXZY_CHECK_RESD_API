@@ -102,6 +102,15 @@ const paymentSelect = {
   },
 };
 
+const transformPaymentResponse = (payment: any) => {
+  if (!payment) return payment;
+  if (payment.period && payment.fee?.dueDate && payment.fee?.type === "MONTHLY") {
+    const lastDay = dayjs(payment.period + "-01").endOf("month").toDate();
+    return { ...payment, fee: { ...payment.fee, dueDate: lastDay } };
+  }
+  return payment;
+};
+
 const paymentListSelect = {
   id: true,
   residentId: true,
@@ -273,14 +282,15 @@ export const getDataTablePayments = async (
     take: limit,
   });
 
-  return { rows: rows as any[], total };
+  return { rows: rows.map(transformPaymentResponse) as any[], total };
 };
 
 export const getPaymentById = async (id: string) => {
-  return prisma.payment.findFirst({
+  const payment = await prisma.payment.findFirst({
     where: { id, deletedAt: null },
     select: paymentSelect,
   });
+  return transformPaymentResponse(payment);
 };
 
 export const getReceiptPDF = async (id: string): Promise<Buffer | null> => {
@@ -360,7 +370,7 @@ export const createPayment = async (data: {
     return p;
   });
 
-  return payment;
+  return transformPaymentResponse(payment);
 };
 
 export const updatePayment = async (
@@ -410,16 +420,17 @@ export const updatePayment = async (
       }
     }
 
-    return updated;
+    return transformPaymentResponse(updated);
   });
 };
 
 export const deletePayment = async (id: string) => {
-  return prisma.payment.update({
+  const payment = await prisma.payment.update({
     where: { id },
     data: { deletedAt: new Date(), status: "CANCELLED" },
     select: paymentSelect,
   });
+  return transformPaymentResponse(payment);
 };
 
 export const getPaymentSummary = async (residentId?: string, from?: string, to?: string) => {
