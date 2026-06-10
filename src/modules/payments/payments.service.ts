@@ -91,6 +91,7 @@ const paymentSelect = {
       email: true,
       phone: true,
       user: { select: { id: true, name: true, lastName: true } },
+      house: { select: { number: true, street: true } },
     },
   },
   fee: { select: { id: true, name: true, amount: true, type: true, dueDate: true } },
