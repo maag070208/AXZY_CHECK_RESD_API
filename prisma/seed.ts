@@ -10,7 +10,7 @@ import { residentsSeed }        from "./seeds/residents";
 import { vehiclesSeed }         from "./seeds/vehicles";
 import { visitorsSeed }         from "./seeds/visitors";
 import { accessLogsSeed }       from "./seeds/access-logs";
-import { paymentsSeed }        from "./seeds/payments";
+import { feesSeed }            from "./seeds/fees";
 import { complaintsSeed }       from "./seeds/complaints";
 import { notificationsSeed }    from "./seeds/notifications";
 import { sysConfigSeed }        from "./seeds/sysconfig";
@@ -50,8 +50,8 @@ async function main() {
 
   // ── Community ─────────────────────────────────────────────────────────────
   hackerLog.header("Phase 5: Community & Finance");
-  await paymentsSeed(prisma);           // cuotas + pagos
-  await complaintsSeed(prisma);         // categorías + quejas
+  await feesSeed(prisma);              // cuotas para demo (sin pagos)
+  await complaintsSeed(prisma);        // categorías + quejas
   await notificationsSeed(prisma);      // notificaciones
 
   hackerLog.divider();
