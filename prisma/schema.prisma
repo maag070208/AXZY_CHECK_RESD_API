@@ -117,6 +117,7 @@ model User {
   residents               Resident[]
   accessLogs              AccessLog[]              @relation("GuardAccessLogs")
   resolvedComplaints      Complaint[]              @relation("ComplaintResolver")
+  complaintMessages       ComplaintMessage[]
   notifications           Notification[]
   sessions                UserSession[]
 }
@@ -294,6 +295,18 @@ model Complaint {
   resident   Resident          @relation(fields: [residentId], references: [id])
   category   ComplaintCategory @relation(fields: [categoryId], references: [id])
   resolvedBy User?             @relation("ComplaintResolver", fields: [resolvedById], references: [id])
+  messages   ComplaintMessage[]
+}
+
+model ComplaintMessage {
+  id          String   @id @default(uuid())
+  complaintId String
+  userId      String
+  message     String
+  createdAt   DateTime @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
 
 enum FeeType {

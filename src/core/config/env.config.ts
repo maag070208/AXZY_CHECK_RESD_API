@@ -22,4 +22,5 @@ export const env = {
     API_KEY_SECRET: process.env.TWILIO_API_KEY_SECRET,
   },
   RESEND_API_KEY: process.env.RESEND_API_KEY,
+  ABLY_KEY: process.env.ABLY_KEY,
 };

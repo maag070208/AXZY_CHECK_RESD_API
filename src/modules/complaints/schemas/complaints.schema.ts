@@ -58,3 +58,12 @@ export const ComplaintIdParamSchema = z.object({
     id: z.string().uuid("ID de queja inválido"),
   }),
 });
+
+export const CreateMessageSchema = z.object({
+  body: z.object({
+    message: z.string({ message: "Mensaje requerido" }).min(1, "El mensaje no puede estar vacío"),
+  }),
+  params: z.object({
+    id: z.string().uuid("ID de queja inválido"),
+  }),
+});

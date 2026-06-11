@@ -72,17 +72,26 @@ export const getWorkloadComparison = asyncHandler(async (req: Request, res: Resp
     res.json(result);
 });
 
-export const generateAdministrativeReport = asyncHandler(async (req: Request, res: Response) => {
-    const params = req.body;
-    try {
-        const buffer = await ReportService.generateAdministrativeMatrixReport(params);
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-            "Content-Disposition",
-            `inline; filename=Matriz_Administrativa_${new Date().getTime()}.pdf`
-        );
-        res.status(200).send(buffer);
-    } catch (error: any) {
-        res.status(500).json({ success: false, messages: [error.message], data: null });
-    }
+export const getPaymentReport = asyncHandler(async (req: Request, res: Response) => {
+    const result = await ReportService.getPaymentReport(req.body);
+    res.json(result);
+});
+
+export const getPaymentReportPDF = asyncHandler(async (req: Request, res: Response) => {
+    const buffer = await ReportService.getPaymentReportPDF(req.body);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename=Reporte_Cobranza_${Date.now()}.pdf`);
+    res.status(200).send(buffer);
+});
+
+export const getIncidentsComplaintsReport = asyncHandler(async (req: Request, res: Response) => {
+    const result = await ReportService.getIncidentsComplaintsReport(req.body);
+    res.json(result);
+});
+
+export const getIncidentsComplaintsReportPDF = asyncHandler(async (req: Request, res: Response) => {
+    const buffer = await ReportService.getIncidentsComplaintsReportPDF(req.body);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename=Reporte_Incidencias_Quejas_${Date.now()}.pdf`);
+    res.status(200).send(buffer);
 });

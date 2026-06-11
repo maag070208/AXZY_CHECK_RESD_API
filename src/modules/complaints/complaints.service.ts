@@ -11,6 +11,10 @@ import {
   IComplaintResponse,
 } from "./complaints.dto";
 import {
+  IComplaintMessageResponse,
+} from "./complaints.dto";
+import { publishComplaintMessage, publishComplaintUpdate } from "./complaints.socket";
+import {
   ITDataTableFetchParams,
   ITDataTableResponse,
 } from "@src/core/dto/datatable.dto";
@@ -120,7 +124,7 @@ export const getComplaintById = async (id: string): Promise<IComplaintResponse |
 };
 
 export const createComplaint = async (data: IComplaintCreateRequest): Promise<IComplaintResponse> => {
-  return prisma.complaint.create({
+  const complaint = await prisma.complaint.create({
     data: {
       residentId: data.residentId,
       categoryId: data.categoryId,
@@ -130,10 +134,49 @@ export const createComplaint = async (data: IComplaintCreateRequest): Promise<IC
       status: ComplaintStatus.OPEN,
     },
     select: complaintSelect,
-  }) as Promise<IComplaintResponse>;
+  });
+  publishComplaintUpdate(complaint.id, "new_complaint").catch(() => {});
+  return complaint as IComplaintResponse;
 };
 
-export const updateComplaint = async (id: string, data: IComplaintUpdateRequest): Promise<IComplaintResponse> => {
+export const updateComplaint = async (id: string, data: IComplaintUpdateRequest, actorId?: string): Promise<IComplaintResponse> => {
+  const existing = await prisma.complaint.findFirst({
+    where: { id, deletedAt: null },
+    select: { status: true },
+  });
+
+  if (!existing) {
+    throw new Error("Queja no encontrada");
+  }
+
+  if (existing.status === ComplaintStatus.CLOSED) {
+    throw new Error("No se puede modificar una queja cerrada");
+  }
+
+  if (data.status !== undefined) {
+    const next = data.status as ComplaintStatus;
+    const validTransitions: Record<ComplaintStatus, ComplaintStatus[]> = {
+      OPEN: [ComplaintStatus.IN_PROGRESS, ComplaintStatus.RESOLVED, ComplaintStatus.CLOSED],
+      IN_PROGRESS: [ComplaintStatus.RESOLVED, ComplaintStatus.CLOSED],
+      RESOLVED: [ComplaintStatus.CLOSED],
+      CLOSED: [],
+    };
+
+    const allowed = validTransitions[existing.status];
+    if (!allowed.includes(next)) {
+      throw new Error(`No se puede cambiar de ${existing.status} a ${next}`);
+    }
+
+    if (next === ComplaintStatus.RESOLVED || next === ComplaintStatus.CLOSED) {
+      if (actorId && !data.resolvedById) {
+        data.resolvedById = actorId;
+      }
+      if (!data.resolvedAt) {
+        data.resolvedAt = new Date().toISOString();
+      }
+    }
+  }
+
   const updateData: any = {};
   if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
   if (data.title !== undefined) updateData.title = data.title;
@@ -146,11 +189,17 @@ export const updateComplaint = async (id: string, data: IComplaintUpdateRequest)
     updateData.deletedAt = data.softDelete ? new Date() : null;
   }
 
-  return prisma.complaint.update({
+  const updated = await prisma.complaint.update({
     where: { id },
     data: updateData,
     select: complaintSelect,
-  }) as Promise<IComplaintResponse>;
+  });
+
+  if (data.status !== undefined) {
+    publishComplaintUpdate(id, "status_change").catch(() => {});
+  }
+
+  return updated as IComplaintResponse;
 };
 
 export const deleteComplaint = async (id: string): Promise<IComplaintResponse> => {
@@ -159,4 +208,56 @@ export const deleteComplaint = async (id: string): Promise<IComplaintResponse> =
     data: { deletedAt: new Date() },
     select: complaintSelect,
   }) as Promise<IComplaintResponse>;
+};
+
+const messageSelect = {
+  id: true,
+  complaintId: true,
+  userId: true,
+  message: true,
+  createdAt: true,
+  user: { select: { id: true, name: true, lastName: true } },
+};
+
+export const getComplaintMessages = async (complaintId: string): Promise<IComplaintMessageResponse[]> => {
+  return prisma.complaintMessage.findMany({
+    where: { complaintId },
+    select: messageSelect,
+    orderBy: { createdAt: "asc" },
+  }) as Promise<IComplaintMessageResponse[]>;
+};
+
+export const createComplaintMessage = async (
+  complaintId: string,
+  userId: string,
+  message: string,
+): Promise<IComplaintMessageResponse> => {
+  const complaint = await prisma.complaint.findFirst({
+    where: { id: complaintId, deletedAt: null },
+    select: { status: true },
+  });
+
+  if (!complaint) {
+    throw new Error("Queja no encontrada");
+  }
+
+  if (complaint.status === ComplaintStatus.CLOSED) {
+    throw new Error("No se pueden enviar mensajes en una queja cerrada");
+  }
+  const msg = await prisma.complaintMessage.create({
+    data: { complaintId, userId, message },
+    select: messageSelect,
+  });
+
+  const channelMessage = {
+    id: msg.id,
+    message: msg.message,
+    userId: msg.userId,
+    userName: (msg as any).user?.name || "Usuario",
+    createdAt: msg.createdAt.toISOString(),
+  };
+  publishComplaintMessage(complaintId, channelMessage).catch(() => {});
+  publishComplaintUpdate(complaintId, "new_message").catch(() => {});
+
+  return msg as IComplaintMessageResponse;
 };

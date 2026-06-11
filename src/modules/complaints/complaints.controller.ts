@@ -102,7 +102,7 @@ export const addComplaint = asyncHandler(async (req: Request, res: Response) => 
 
 
 export const putComplaint = asyncHandler(async (req: Request, res: Response) => {
-  const result = await complaintsService.updateComplaint(req.params.id, req.body);
+  const result = await complaintsService.updateComplaint(req.params.id, req.body, res.locals.user?.id);
   await createAuditLog({
     userId: res.locals.user?.id || "SYSTEM",
     module: "COMPLAINTS",
@@ -121,5 +121,21 @@ export const removeComplaint = asyncHandler(async (req: Request, res: Response) 
     action: "DELETE",
     resourceId: req.params.id,
   });
+  return res.status(200).json(createTResult(result));
+});
+
+export const getMessages = asyncHandler(async (req: Request, res: Response) => {
+  const messages = await complaintsService.getComplaintMessages(req.params.id);
+  return res.status(200).json(createTResult(messages));
+});
+
+export const createMessage = asyncHandler(async (req: Request, res: Response) => {
+  const userId = res.locals.user?.id;
+  if (!userId) throw new AppError("Usuario no autenticado", 401);
+  const result = await complaintsService.createComplaintMessage(
+    req.params.id,
+    userId,
+    req.body.message,
+  );
   return res.status(200).json(createTResult(result));
 });

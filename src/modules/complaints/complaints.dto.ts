@@ -40,3 +40,16 @@ export interface IComplaintResponse {
   category?: { id: string; name: string; icon: string | null; color: string | null };
   resolvedBy?: { id: string; name: string; lastName: string | null } | null;
 }
+
+export interface IComplaintMessageResponse {
+  id: string;
+  complaintId: string;
+  userId: string;
+  message: string;
+  createdAt: Date;
+  user: {
+    id: string;
+    name: string;
+    lastName: string | null;
+  };
+}
